@@ -23,7 +23,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="max-w-md mx-auto bg-white shadow-2xl min-h-screen relative overflow-hidden">
+        <div className="w-full min-h-screen bg-white relative overflow-hidden">
           <div className="absolute inset-0 pointer-events-none" style={{background: 'linear-gradient(135deg, hsl(251, 82%, 67%, 0.05), transparent, hsl(166, 73%, 45%, 0.05))'}}></div>
           <Router />
           <Toaster />

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Calendar, Share2, Play } from "lucide-react";
+import { Calendar, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDateRange } from "@/lib/date-utils";
 import type { Verse } from "@shared/schema";
@@ -8,7 +8,6 @@ interface VerseCardProps {
   verse: Verse | null;
   weekType: "last" | "current" | "next";
   dateRange: string;
-  onMemorize?: () => void;
   onShare?: () => void;
 }
 
@@ -39,7 +38,7 @@ const weekTypeConfig = {
   },
 };
 
-export default function VerseCard({ verse, weekType, dateRange, onMemorize, onShare }: VerseCardProps) {
+export default function VerseCard({ verse, weekType, dateRange, onShare }: VerseCardProps) {
   const config = weekTypeConfig[weekType];
 
   return (
@@ -76,16 +75,8 @@ export default function VerseCard({ verse, weekType, dateRange, onMemorize, onSh
             {verse.reference}
           </cite>
           
-          {weekType === 'current' && (
-            <div className="mt-4 flex items-center space-x-3">
-              <Button 
-                onClick={onMemorize}
-                className="flex-1 bg-primary text-white hover:opacity-90"
-                size="sm"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                암송 연습
-              </Button>
+          {weekType === 'current' && onShare && (
+            <div className="mt-4 flex justify-end">
               <Button
                 variant="outline"
                 size="sm"

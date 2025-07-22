@@ -8,6 +8,7 @@ import VerseCard from "@/components/verse-card";
 import BottomNavigation from "@/components/bottom-navigation";
 import ExcelUploader from "@/components/excel-uploader";
 import CalendarModal from "@/components/calendar-modal";
+import CaptureButton from "@/components/capture-button";
 import { formatDateRange, getLastWeekRange, getCurrentWeekRange, getNextWeekRange, formatDate } from "@/lib/date-utils";
 import { LocalStorage } from "@/lib/storage";
 
@@ -23,12 +24,7 @@ export default function Home() {
   const thisWeekRange = getCurrentWeekRange();
   const nextWeekRange = getNextWeekRange();
 
-  const handleMemorize = () => {
-    toast({
-      title: "암송 연습",
-      description: "암송 연습 기능이 곧 추가될 예정입니다.",
-    });
-  };
+
 
   const handleShare = async () => {
     if (weeklyVerses?.thisWeek) {
@@ -56,18 +52,23 @@ export default function Home() {
 
   if (!hasData) {
     return (
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
-        <ExcelUploader onUploadComplete={() => setHasData(true)} />
+      <div className="min-h-screen flex flex-col">
+        <CaptureButton />
+        <div className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6">
+          <ExcelUploader onUploadComplete={() => setHasData(true)} />
+        </div>
         <BottomNavigation />
       </div>
     );
   }
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
+      <CaptureButton />
+      
       {/* Header */}
-      <header className="relative z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <header className="relative z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-4 sm:px-6 py-4">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center">
               <i className="fas fa-bible text-white text-lg"></i>
@@ -88,7 +89,8 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 px-6 py-6 pb-24 space-y-6">
+      <main className="relative z-10 flex-1 px-4 sm:px-6 py-6 pb-24">
+        <div className="max-w-4xl mx-auto space-y-6">
         {/* Weekly Verses Section */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
@@ -109,7 +111,6 @@ export default function Home() {
               verse={weeklyVerses?.thisWeek || null}
               weekType="current"
               dateRange={formatDateRange(thisWeekRange.start, thisWeekRange.end)}
-              onMemorize={handleMemorize}
               onShare={handleShare}
             />
             <VerseCard
@@ -189,10 +190,11 @@ export default function Home() {
             </motion.button>
           </div>
         </section>
+        </div>
       </main>
 
       <BottomNavigation />
       <CalendarModal isOpen={showCalendar} onClose={() => setShowCalendar(false)} />
-    </>
+    </div>
   );
 }

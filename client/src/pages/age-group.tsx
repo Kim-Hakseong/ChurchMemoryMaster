@@ -5,6 +5,7 @@ import { useWeeklyVerses } from "@/hooks/use-verses";
 import { useToast } from "@/hooks/use-toast";
 import VerseCard from "@/components/verse-card";
 import BottomNavigation from "@/components/bottom-navigation";
+import CaptureButton from "@/components/capture-button";
 import { Link, useRoute } from "wouter";
 import { formatDateRange, getLastWeekRange, getCurrentWeekRange, getNextWeekRange } from "@/lib/date-utils";
 import type { AgeGroup } from "@shared/schema";
@@ -45,12 +46,7 @@ export default function AgeGroup() {
   const thisWeekRange = getCurrentWeekRange();
   const nextWeekRange = getNextWeekRange();
 
-  const handleMemorize = () => {
-    toast({
-      title: "암송 연습",
-      description: "암송 연습 기능이 곧 추가될 예정입니다.",
-    });
-  };
+
 
   const handleShare = async () => {
     if (weeklyVerses?.thisWeek) {
@@ -93,10 +89,12 @@ export default function AgeGroup() {
   const Icon = config.icon;
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
+      <CaptureButton />
+      
       {/* Header */}
-      <header className="relative z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <header className="relative z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-4 sm:px-6 py-4">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div className="flex items-center space-x-3">
             <Link href="/">
               <Button variant="ghost" size="sm" className="w-10 h-10 p-0 hover:bg-gray-100">
@@ -115,53 +113,54 @@ export default function AgeGroup() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 px-6 py-6 pb-24 space-y-6">
-        {/* Weekly Verses */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-gray-800">주간 암송 말씀</h3>
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="w-4 h-4 text-accent" />
-              <span className="text-sm text-gray-500">주간별 진도</span>
+      <main className="relative z-10 flex-1 px-4 sm:px-6 py-6 pb-24">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Weekly Verses */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-gray-800">주간 암송 말씀</h3>
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="w-4 h-4 text-accent" />
+                <span className="text-sm text-gray-500">주간별 진도</span>
+              </div>
             </div>
-          </div>
 
-          {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="verse-card animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-3"></div>
-                  <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <VerseCard
-                verse={weeklyVerses?.lastWeek || null}
-                weekType="last"
-                dateRange={formatDateRange(lastWeekRange.start, lastWeekRange.end)}
-              />
-              <VerseCard
-                verse={weeklyVerses?.thisWeek || null}
-                weekType="current"
-                dateRange={formatDateRange(thisWeekRange.start, thisWeekRange.end)}
-                onMemorize={handleMemorize}
-                onShare={handleShare}
-              />
-              <VerseCard
-                verse={weeklyVerses?.nextWeek || null}
-                weekType="next"
-                dateRange={formatDateRange(nextWeekRange.start, nextWeekRange.end)}
-              />
-            </div>
-          )}
-        </section>
+            {isLoading ? (
+              <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="verse-card animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-1/4 mb-3"></div>
+                    <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-3">
+                <VerseCard
+                  verse={weeklyVerses?.lastWeek || null}
+                  weekType="last"
+                  dateRange={formatDateRange(lastWeekRange.start, lastWeekRange.end)}
+                />
+                <VerseCard
+                  verse={weeklyVerses?.thisWeek || null}
+                  weekType="current"
+                  dateRange={formatDateRange(thisWeekRange.start, thisWeekRange.end)}
+                  onShare={handleShare}
+                />
+                <VerseCard
+                  verse={weeklyVerses?.nextWeek || null}
+                  weekType="next"
+                  dateRange={formatDateRange(nextWeekRange.start, nextWeekRange.end)}
+                />
+              </div>
+            )}
+          </section>
+        </div>
       </main>
 
       <BottomNavigation />
-    </>
+    </div>
   );
 }
