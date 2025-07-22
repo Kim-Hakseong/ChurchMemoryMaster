@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "
 import { Button } from "@/components/ui/button";
 import { useCalendarData } from "@/hooks/use-calendar";
 import BottomNavigation from "@/components/bottom-navigation";
+import CaptureButton from "@/components/capture-button";
 import { Link } from "wouter";
 import { formatDate } from "@/lib/date-utils";
 
@@ -68,16 +69,13 @@ export default function Calendar() {
   };
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
+      <CaptureButton />
+      
       {/* Header */}
-      <header className="relative z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <header className="relative z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-4 sm:px-6 py-4">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div className="flex items-center space-x-3">
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="w-10 h-10 p-0 hover:bg-gray-100">
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
-              </Button>
-            </Link>
             <div>
               <h1 className="text-lg font-semibold text-gray-800">교회학교 캘린더</h1>
               <p className="text-xs text-gray-500">{formatDate(new Date())}</p>
@@ -87,7 +85,8 @@ export default function Calendar() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 px-6 py-6 pb-24 space-y-6">
+      <main className="relative z-10 flex-1 px-4 sm:px-6 py-6 pb-24">
+        <div className="max-w-4xl mx-auto space-y-6">
         {/* Month Navigation */}
         <div className="flex items-center justify-between">
           <Button
@@ -224,9 +223,10 @@ export default function Calendar() {
             </div>
           </section>
         )}
+        </div>
       </main>
 
       <BottomNavigation />
-    </>
+    </div>
   );
 }

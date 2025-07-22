@@ -4,10 +4,10 @@ import { Calendar, Baby, GraduationCap, Users } from "lucide-react";
 import { Link } from "wouter";
 
 const navItems = [
-  { path: "/calendar", icon: Calendar, label: "캘린더", id: "calendar" },
   { path: "/age-group/kindergarten", icon: Baby, label: "유치부", id: "kindergarten" },
   { path: "/age-group/elementary", icon: Users, label: "초등부", id: "elementary" },
   { path: "/age-group/youth", icon: GraduationCap, label: "중‧고등부", id: "youth" },
+  { path: "/calendar", icon: Calendar, label: "캘린더", id: "calendar" },
 ];
 
 export default function BottomNavigation() {
@@ -18,7 +18,7 @@ export default function BottomNavigation() {
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const isActive = location === item.path || 
-            (item.id === "calendar" && location === "/");
+            (item.id === "kindergarten" && location === "/");
           const Icon = item.icon;
           
           return (

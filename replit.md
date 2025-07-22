@@ -8,6 +8,8 @@ This is a React-based mobile web application designed for church memory verse ma
 
 Preferred communication style: Simple, everyday language.
 Data architecture: Excel files as primary data source, no external database needed.
+UI Structure: No main home screen - direct access to age group tabs only.
+Features: Screen capture functionality, responsive design for all devices.
 
 ## System Architecture
 
@@ -48,17 +50,19 @@ The application manages two primary data types defined in the shared schema:
 - **No Database**: Application designed to work entirely with Excel files and local storage
 
 ### Page Structure
-1. **Home Page**: Dashboard showing weekly verses overview and Excel upload
+1. **Age Group Pages**: Direct access to kindergarten, elementary, and youth verse views (kindergarten is default)
 2. **Calendar Page**: Monthly calendar view with events and verses
-3. **Age Group Pages**: Dedicated pages for each age group showing weekly verses
-4. **404 Page**: Error handling for invalid routes
+3. **404 Page**: Error handling for invalid routes
+4. **Removed**: Main home dashboard (per user request)
 
 ### Core Features
 - **Weekly Verse Display**: Shows last week, current week, and next week verses
-- **Excel Data Import**: Bulk upload of verses and events via XLSX files
+- **Excel Data Import**: Bulk upload of verses and events via XLSX files with specific column mapping
 - **Calendar Integration**: Monthly calendar with events and verse indicators
-- **Age Group Filtering**: Separate views for different age demographics
-- **Responsive Navigation**: Bottom navigation bar for mobile experience
+- **Age Group Tabs**: Direct navigation between kindergarten, elementary, and youth views
+- **Screen Capture**: Built-in capture functionality for saving verse displays
+- **Responsive Design**: Optimized for all device sizes with flexible layouts
+- **Removed Features**: Memory practice functionality, weekly progress indicators
 
 ## Data Flow
 

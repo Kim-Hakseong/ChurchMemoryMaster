@@ -36,7 +36,7 @@ const ageGroupConfig = {
 
 export default function AgeGroup() {
   const [match, params] = useRoute("/age-group/:group");
-  const ageGroup = params?.group as AgeGroup;
+  const ageGroup = (params?.group as AgeGroup) || 'kindergarten';
   const { toast } = useToast();
 
   const config = ageGroupConfig[ageGroup];
@@ -96,11 +96,6 @@ export default function AgeGroup() {
       <header className="relative z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div className="flex items-center space-x-3">
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="w-10 h-10 p-0 hover:bg-gray-100">
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
-              </Button>
-            </Link>
             <div className={`w-10 h-10 bg-gradient-to-br ${config.bgColor} rounded-xl flex items-center justify-center`}>
               <Icon className="w-5 h-5 text-white" />
             </div>
@@ -119,10 +114,6 @@ export default function AgeGroup() {
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-gray-800">주간 암송 말씀</h3>
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="w-4 h-4 text-accent" />
-                <span className="text-sm text-gray-500">주간별 진도</span>
-              </div>
             </div>
 
             {isLoading ? (

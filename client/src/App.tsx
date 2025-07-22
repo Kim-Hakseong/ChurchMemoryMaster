@@ -11,9 +11,9 @@ import AgeGroup from "@/pages/age-group";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/calendar" component={Calendar} />
+      <Route path="/" component={() => <AgeGroup />} />
       <Route path="/age-group/:group" component={AgeGroup} />
+      <Route path="/calendar" component={Calendar} />
       <Route component={NotFound} />
     </Switch>
   );
