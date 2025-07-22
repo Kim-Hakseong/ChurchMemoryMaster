@@ -60,13 +60,16 @@ export class ExcelParser {
       // Skip header row
       for (let i = 1; i < jsonData.length; i++) {
         const row = jsonData[i] as any[];
-        if (!row || row.length < 2) continue;
+        if (!row || row.length < 3) continue;
 
-        const dateValue = row[0];
+        // 첫번째 열: 공과명 (lesson name)
+        const lessonName = row[0];
+        // 두번째 열: 구절 (verse text)  
         const verseText = row[1];
-        const additionalInfo = row[2];
+        // 세번째 열: 해당날짜 (date)
+        const dateValue = row[2];
 
-        if (!dateValue || !verseText) continue;
+        if (!verseText || !dateValue) continue;
 
         // Parse date
         let date: Date;
@@ -94,17 +97,17 @@ export class ExcelParser {
           verse,
           reference,
           ageGroup,
-          additionalInfo: additionalInfo || null,
+          additionalInfo: lessonName || null,
         });
 
-        // If additional info looks like an event, create an event
-        if (additionalInfo && typeof additionalInfo === 'string') {
-          const eventPattern = /(발표회|대회|행사|예배|모임)/;
-          if (eventPattern.test(additionalInfo)) {
+        // If lesson name looks like an event, create an event
+        if (lessonName && typeof lessonName === 'string') {
+          const eventPattern = /(발표회|대회|행사|예배|모임|특별|축제)/;
+          if (eventPattern.test(lessonName)) {
             events.push({
               id: eventId++,
               date: date.toISOString().split('T')[0],
-              title: additionalInfo,
+              title: lessonName,
               description: `${ageGroup} 관련 행사`,
               ageGroup,
             });
