@@ -7,6 +7,7 @@ This is a React-based mobile web application designed for church memory verse ma
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Data architecture: Excel files as primary data source, no external database needed.
 
 ## System Architecture
 
@@ -41,9 +42,10 @@ The application manages two primary data types defined in the shared schema:
 - **Age Groups**: Three categories - kindergarten, elementary, and youth
 
 ### Storage Strategy
-- **Local Storage**: Primary data storage using browser localStorage
-- **Excel Upload**: XLSX parsing for bulk data import
-- **Database Ready**: Drizzle ORM configured for PostgreSQL (currently unused)
+- **Excel File as Data Source**: Excel files serve as the primary data source
+- **Local Storage**: Browser localStorage for data persistence after Excel parsing
+- **Excel Upload**: XLSX parsing for bulk data import and management
+- **No Database**: Application designed to work entirely with Excel files and local storage
 
 ### Page Structure
 1. **Home Page**: Dashboard showing weekly verses overview and Excel upload
@@ -115,10 +117,10 @@ The application manages two primary data types defined in the shared schema:
 - **Static Serving**: Express serves built React app in production
 - **Environment**: NODE_ENV-based configuration switching
 
-### Database Configuration
-- Drizzle ORM configured for PostgreSQL with migrations
-- Schema defined in shared directory for type safety
-- Currently using localStorage, but database-ready for future scaling
-- Migration system in place with `db:push` command
+### Data Management
+- Excel files serve as the single source of truth for verse and event data
+- TypeScript schema definitions provide type safety for data structures
+- Local storage enables offline functionality and quick data access
+- No external database required - keeps the app simple and portable
 
 The application is designed to be easily deployable on Replit with minimal configuration, using environment variables for database connection when needed.
