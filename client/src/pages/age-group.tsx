@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Users, Baby, GraduationCap, Calendar, TrendingUp } from "lucide-react";
+import { ArrowLeft, Users, Baby, GraduationCap, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWeeklyVerses } from "@/hooks/use-verses";
 import { useToast } from "@/hooks/use-toast";
@@ -116,25 +116,6 @@ export default function AgeGroup() {
 
       {/* Main Content */}
       <main className="relative z-10 px-6 py-6 pb-24 space-y-6">
-        {/* Description Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="verse-card text-center"
-        >
-          <div className={`w-16 h-16 bg-gradient-to-br ${config.bgColor} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-            <Icon className="w-8 h-8 text-white" />
-          </div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">{config.title}</h2>
-          <p className="text-sm text-gray-600 mb-4">{config.description}</p>
-          <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
-            <div className="flex items-center space-x-1">
-              <Users className="w-4 h-4" />
-              <span>대상: {config.subtitle}</span>
-            </div>
-          </div>
-        </motion.div>
-
         {/* Weekly Verses */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
@@ -177,55 +158,6 @@ export default function AgeGroup() {
               />
             </div>
           )}
-        </section>
-
-        {/* Quick Actions */}
-        <section className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">빠른 메뉴</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="verse-card text-center p-4"
-            >
-              <Calendar className="w-8 h-8 text-primary mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-700">월간 캘린더</p>
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="verse-card text-center p-4"
-            >
-              <TrendingUp className="w-8 h-8 text-accent mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-700">암송 진도</p>
-            </motion.button>
-          </div>
-        </section>
-
-        {/* Progress Summary */}
-        <section className="verse-card">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">{config.title} 현황</h3>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className={`w-12 h-12 bg-gradient-to-br ${config.bgColor} rounded-xl flex items-center justify-center mx-auto mb-2`}>
-                <span className="text-white font-bold">12</span>
-              </div>
-              <p className="text-xs text-gray-500">완료</p>
-            </div>
-            <div>
-              <div className="w-12 h-12 bg-gradient-to-br from-secondary to-orange-500 rounded-xl flex items-center justify-center mx-auto mb-2">
-                <span className="text-white font-bold">1</span>
-              </div>
-              <p className="text-xs text-gray-500">진행중</p>
-            </div>
-            <div>
-              <div className="w-12 h-12 bg-gradient-to-br from-accent to-green-500 rounded-xl flex items-center justify-center mx-auto mb-2">
-                <span className="text-white font-bold">8</span>
-              </div>
-              <p className="text-xs text-gray-500">예정</p>
-            </div>
-          </div>
         </section>
       </main>
 
