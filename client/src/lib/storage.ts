@@ -1,4 +1,5 @@
 import type { Verse, Event, AgeGroup } from "@shared/schema";
+import { initialVerses, initialEvents } from "@/data/initial-data";
 
 const VERSES_KEY = 'church_verses';
 const EVENTS_KEY = 'church_events';
@@ -73,5 +74,19 @@ export class LocalStorage {
     localStorage.removeItem(VERSES_KEY);
     localStorage.removeItem(EVENTS_KEY);
     localStorage.removeItem(LAST_UPDATED_KEY);
+  }
+
+  static initializeData(): void {
+    // 데이터가 없으면 초기 데이터를 로드
+    const existingVerses = this.getVerses();
+    const existingEvents = this.getEvents();
+    
+    if (existingVerses.length === 0) {
+      this.saveVerses(initialVerses);
+    }
+    
+    if (existingEvents.length === 0) {
+      this.saveEvents(initialEvents);
+    }
   }
 }

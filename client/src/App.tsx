@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { LocalStorage } from "@/lib/storage";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Calendar from "@/pages/calendar";
@@ -20,6 +21,9 @@ function Router() {
 }
 
 function App() {
+  // 앱 시작시 초기 데이터 로드
+  LocalStorage.initializeData();
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
