@@ -60,8 +60,7 @@ export default function CalendarModal({ isOpen, onClose }: CalendarModalProps) {
   const hasEventOnDate = (date: Date) => {
     if (!calendarData) return false;
     const dateStr = date.toISOString().split('T')[0];
-    return calendarData.events.some(event => event.date === dateStr) ||
-           calendarData.verses.some(verse => verse.date === dateStr);
+    return calendarData.events.some(event => event.date === dateStr);
   };
 
   const isToday = (date: Date) => {

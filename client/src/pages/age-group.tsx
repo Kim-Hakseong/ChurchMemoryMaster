@@ -1,57 +1,78 @@
-import { motion } from "framer-motion";
-import { ArrowLeft, Users, Baby, GraduationCap, TrendingUp } from "lucide-react";
+import { useEffect } from "react";
+import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useWeeklyVerses } from "@/hooks/use-verses";
+import { LocalStorage } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import VerseCard from "@/components/verse-card";
 import BottomNavigation from "@/components/bottom-navigation";
 import CaptureButton from "@/components/capture-button";
-import { Link, useRoute } from "wouter";
-import { formatDateRange, getLastWeekRange, getCurrentWeekRange, getNextWeekRange } from "@/lib/date-utils";
+import { Link } from "wouter";
+import { Baby, Users, GraduationCap, Quote } from "lucide-react";
 import type { AgeGroup } from "@shared/schema";
 
 const ageGroupConfig = {
   kindergarten: {
     title: "유치부",
     subtitle: "5-7세",
-    icon: Baby,
-    bgColor: "from-pink-400 to-red-400",
-    description: "어린이를 위한 쉬운 암송 말씀",
+    icon: () => (
+      <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
+        <Baby className="text-pink-600 w-4 h-4" />
+      </div>
+    ),
   },
   elementary: {
     title: "초등부", 
     subtitle: "8-13세",
-    icon: Users,
-    bgColor: "from-blue-400 to-cyan-400",
-    description: "초등학생을 위한 기초 암송 말씀",
+    icon: () => (
+      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+        <Users className="text-blue-600 w-4 h-4" />
+      </div>
+    ),
   },
   youth: {
-    title: "중‧고등부",
-    subtitle: "14-18세", 
-    icon: GraduationCap,
-    bgColor: "from-purple-400 to-indigo-400",
-    description: "청소년을 위한 깊이 있는 암송 말씀",
+    title: "중고등부",
+    subtitle: "14-18세",
+    icon: () => (
+      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+        <GraduationCap className="text-green-600 w-4 h-4" />
+      </div>
+    ),
   },
 };
 
 export default function AgeGroup() {
+  const [location] = useLocation();
   const [match, params] = useRoute("/age-group/:group");
-  const ageGroup = (params?.group as AgeGroup) || 'kindergarten';
+  
+  // 현재 경로에서 연령 그룹 결정
+  const getAgeGroupFromPath = (): AgeGroup => {
+    if (location === '/kindergarten' || location === '/') return 'kindergarten';
+    if (location === '/elementary') return 'elementary';
+    if (location === '/youth') return 'youth';
+    if (match && params?.group) return params.group as AgeGroup;
+    return 'kindergarten'; // default
+  };
+  
+  const ageGroup = getAgeGroupFromPath();
   const { toast } = useToast();
-
   const config = ageGroupConfig[ageGroup];
-  const { data: weeklyVerses, isLoading } = useWeeklyVerses(ageGroup);
+  const { data: weeklyVerses, isLoading, refetch } = useWeeklyVerses(ageGroup);
 
-  const lastWeekRange = getLastWeekRange();
-  const thisWeekRange = getCurrentWeekRange();
-  const nextWeekRange = getNextWeekRange();
-
-
+  // 데이터 확인 및 초기화
+  useEffect(() => {
+    const verses = LocalStorage.getVerses();
+    if (verses.length === 0) {
+      console.log('데이터 없음, 초기화');
+      LocalStorage.initializeData();
+      refetch();
+    }
+  }, [ageGroup, refetch]);
 
   const handleShare = async () => {
     if (weeklyVerses?.thisWeek) {
       const verse = weeklyVerses.thisWeek;
-      const text = `"${verse.verse}" - ${verse.reference}`;
+      const text = `"${verse.content}" - ${verse.reference}`;
       
       if (navigator.share) {
         try {
@@ -63,14 +84,25 @@ export default function AgeGroup() {
           // User cancelled sharing
         }
       } else {
-        await navigator.clipboard.writeText(text);
-        toast({
-          title: "클립보드에 복사됨",
-          description: "암송 말씀이 클립보드에 복사되었습니다.",
-        });
+        // Fallback to clipboard
+        try {
+          await navigator.clipboard.writeText(text);
+          toast({
+            title: "클립보드에 복사됨",
+            description: "암송 말씀이 클립보드에 복사되었습니다.",
+          });
+        } catch (error) {
+          toast({
+            title: "공유 실패",
+            description: "공유 기능을 사용할 수 없습니다.",
+            variant: "destructive",
+          });
+        }
       }
     }
   };
+
+
 
   if (!config) {
     return (
@@ -89,68 +121,63 @@ export default function AgeGroup() {
   const Icon = config.icon;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <CaptureButton />
-      
-      {/* Header */}
-      <header className="relative z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-4 sm:px-6 py-4">
-        <div className="flex items-center justify-between max-w-4xl mx-auto">
-          <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 bg-gradient-to-br ${config.bgColor} rounded-xl flex items-center justify-center`}>
-              <Icon className="w-5 h-5 text-white" />
-            </div>
+    <div className="relative z-10 min-h-screen pb-16">
+      <header className="fixed top-0 left-0 right-0 pt-10 pb-4 px-6 bg-gradient-to-r from-blue-50 to-purple-50 z-40">
+        <div className="flex items-center justify-between h-12">
+          <div className="flex items-center gap-3">
+            <Icon />
             <div>
-              <h1 className="text-lg font-semibold text-gray-800">{config.title}</h1>
-              <p className="text-xs text-gray-500">{config.subtitle}</p>
+              <h1 className="text-xl font-bold text-gray-800">{config.title}</h1>
             </div>
+            {ageGroup === 'elementary' && (
+              <Link href="/monthly-verse">
+                <a className="ml-1 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white shadow border text-gray-700 hover:bg-gray-50">
+                  <Quote className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-medium">초등월암송</span>
+                </a>
+              </Link>
+            )}
           </div>
+          {/* 우측 캡처 버튼과의 시각적 간격 확보용 공간 */}
+          <div className="w-16" />
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="relative z-10 flex-1 px-4 sm:px-6 py-6 pb-24">
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Weekly Verses */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-gray-800">주간 암송 말씀</h3>
+      <main className="flex-1 px-4 py-4 sm:px-6 mt-24">
+        <div>
+          {isLoading ? (
+            <div className="grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="verse-card animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded mb-3"></div>
+                  <div className="h-20 bg-gray-200 rounded mb-3"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                </div>
+              ))}
             </div>
-
-            {isLoading ? (
-              <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-3">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="verse-card animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-1/4 mb-3"></div>
-                    <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-3">
-                <VerseCard
-                  verse={weeklyVerses?.lastWeek || null}
-                  weekType="last"
-                  dateRange={formatDateRange(lastWeekRange.start, lastWeekRange.end)}
-                />
-                <VerseCard
-                  verse={weeklyVerses?.thisWeek || null}
-                  weekType="current"
-                  dateRange={formatDateRange(thisWeekRange.start, thisWeekRange.end)}
-                  onShare={handleShare}
-                />
-                <VerseCard
-                  verse={weeklyVerses?.nextWeek || null}
-                  weekType="next"
-                  dateRange={formatDateRange(nextWeekRange.start, nextWeekRange.end)}
-                />
-              </div>
-            )}
-          </section>
+          ) : (
+            <div className="grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              <VerseCard
+                verse={weeklyVerses?.lastWeek || null}
+                weekType="last"
+                onShare={handleShare}
+              />
+              <VerseCard
+                verse={weeklyVerses?.thisWeek || null}
+                weekType="current"
+                onShare={handleShare}
+              />
+              <VerseCard
+                verse={weeklyVerses?.nextWeek || null}
+                weekType="next"
+                onShare={handleShare}
+              />
+            </div>
+          )}
         </div>
       </main>
 
+      <CaptureButton />
       <BottomNavigation />
     </div>
   );

@@ -1,43 +1,56 @@
-import { useLocation } from "wouter";
-import { motion } from "framer-motion";
-import { Calendar, Baby, GraduationCap, Users } from "lucide-react";
-import { Link } from "wouter";
-
-const navItems = [
-  { path: "/age-group/kindergarten", icon: Baby, label: "유치부", id: "kindergarten" },
-  { path: "/age-group/elementary", icon: Users, label: "초등부", id: "elementary" },
-  { path: "/age-group/youth", icon: GraduationCap, label: "중‧고등부", id: "youth" },
-  { path: "/calendar", icon: Calendar, label: "캘린더", id: "calendar" },
-];
+import { Baby, Users, GraduationCap, Calendar, Home } from "lucide-react";
+import { Link, useLocation } from "wouter";
 
 export default function BottomNavigation() {
   const [location] = useLocation();
 
+  const tabs = [
+    {
+      path: "/kindergarten",
+      icon: Baby,
+      label: "유치부",
+    },
+    {
+      path: "/elementary",
+      icon: Users,
+      label: "초등부",
+    },
+    {
+      path: "/home",
+      icon: Home,
+      label: "메인화면",
+    },
+    {
+      path: "/youth",
+      icon: GraduationCap,
+      label: "중고등부",
+    },
+    {
+      path: "/calendar",
+      icon: Calendar,
+      label: "캘린더",
+    },
+  ];
+
   return (
-    <nav className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-100 px-6 py-3 z-50">
-      <div className="flex items-center justify-around">
-        {navItems.map((item) => {
-          const isActive = location === item.path || 
-            (item.id === "kindergarten" && location === "/");
-          const Icon = item.icon;
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-200 px-2 py-3 z-40" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+      <div className="flex justify-around items-center max-w-lg mx-auto">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = location === tab.path;
           
           return (
-            <Link key={item.id} href={item.path} className="relative">
-              <motion.button
-                className={`nav-button ${
-                  isActive ? "nav-button-active" : "nav-button-inactive"
-                }`}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Icon className={`w-5 h-5 ${
-                  isActive ? "text-primary" : "text-gray-400"
-                }`} />
-                <span className={`text-xs font-medium ${
-                  isActive ? "text-primary" : "text-gray-500"
-                }`}>
-                  {item.label}
-                </span>
-              </motion.button>
+            <Link key={tab.path} href={tab.path}>
+              <a className={`
+                flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 min-w-[60px]
+                ${isActive 
+                  ? 'text-primary bg-primary/10' 
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }
+              `}>
+                <Icon className="w-5 h-5 mb-1" />
+                <span className="text-xs font-medium">{tab.label}</span>
+              </a>
             </Link>
           );
         })}

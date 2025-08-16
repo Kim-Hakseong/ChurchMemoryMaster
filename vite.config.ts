@@ -3,6 +3,9 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
+// 더 강력한 빌드 ID 생성 (캐시 무력화)
+const buildId = `${Date.now()}-${Math.random().toString(36).substring(2)}-${process.hrtime.bigint().toString(36)}-${Math.floor(Math.random() * 999999)}`;
+
 export default defineConfig({
   plugins: [
     react(),
@@ -27,6 +30,20 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        entryFileNames: `assets/main-CACHE-KILLER-${buildId}-[hash].js`,
+        chunkFileNames: `assets/chunk-CACHE-KILLER-${buildId}-[name]-[hash].js`,
+        assetFileNames: (assetInfo) => {
+          const extType = assetInfo.name?.split('.').at(1);
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType || '')) {
+            return `assets/img-CACHE-KILLER-${buildId}-[name]-[hash].[ext]`;
+          }
+          return `assets/style-CACHE-KILLER-${buildId}-[name]-[hash].[ext]`;
+        }
+      }
+    }
   },
   server: {
     fs: {

@@ -1,0 +1,240 @@
+name: iOS Build (Capacitor) - TestFlight
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-ios:
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web (Vite)
+        run: npm run build
+
+      - name: Install Capacitor CLI
+        run: npm i -g @capacitor/cli
+
+      - name: Add/Sync iOS platform
+        run: |
+          if [ ! -d ios ]; then
+            npx cap add ios --skip-dependencies
+          fi
+          npx cap sync ios
+
+      - name: Install Cocoapods
+        run: |
+          sudo gem install cocoapods -N
+          cd ios/App && pod install --repo-update
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      - name: Install fastlane
+        run: sudo gem install fastlane -N
+
+      - name: Create App Store Connect API key file
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: |
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > AuthKey.p8
+          ruby -e 'require "json"; k=File.read("AuthKey.p8"); File.write("api_key.json", JSON.pretty_generate({"key_id"=>ENV["ASC_KEY_ID"], "issuer_id"=>ENV["ASC_ISSUER_ID"], "key"=>k}))'
+
+      - name: Prepare match credentials
+        env:
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: |
+          if [ -z "$MATCH_GIT_URL" ]; then
+            echo "MATCH_GIT_URL is not set. Please configure a private repo for certificates." && exit 1
+          fi
+
+      - name: Generate/Install signing certs & profiles (fastlane match)
+        env:
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APP_BUNDLE_ID: ${{ secrets.APP_BUNDLE_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
+        run: |
+          READONLY=true
+          if [ -n "$FASTLANE_SESSION" ] && [ -n "$APPLE_ID" ]; then
+            echo "Using FASTLANE_SESSION for auth; will allow creating certs/profiles if missing."
+            READONLY=false
+          else
+            echo "No FASTLANE_SESSION provided; running in readonly mode. Make sure match repo already contains certs & profiles."
+          fi
+          fastlane run match type:"appstore" app_identifier:"$APP_BUNDLE_ID" readonly:$READONLY git_url:"$MATCH_GIT_URL" storage_mode:"git" username:"$APPLE_ID"
+
+      - name: Build IPA (fastlane gym)
+        env:
+          APP_BUNDLE_ID: ${{ secrets.APP_BUNDLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          fastlane run build_app \
+            workspace:"ios/App/App.xcworkspace" \
+            scheme:"App" \
+            configuration:"Release" \
+            export_method:"app-store" \
+            output_directory:"build" \
+            output_name:"App.ipa" \
+            xcargs:"DEVELOPMENT_TEAM=$APPLE_TEAM_ID PRODUCT_BUNDLE_IDENTIFIER=$APP_BUNDLE_ID CURRENT_PROJECT_VERSION=$GITHUB_RUN_NUMBER -allowProvisioningUpdates"
+
+      - name: Upload to TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: |
+          fastlane run upload_to_testflight ipa:"build/App.ipa" api_key_path:"api_key.json"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: build/App.ipa
+
+name: iOS Build & TestFlight Upload (Capacitor)
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: 'Upload to TestFlight (true/false)'
+        required: false
+        default: 'false'
+  push:
+    tags:
+      - 'ios-v*'
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      APP_ID: com.church.memory.app.v15
+      IOS_SCHEME: App
+      IOS_WORKSPACE: ios/App/App.xcworkspace
+      ARCHIVE_PATH: ${{ github.workspace }}/build/App.xcarchive
+      EXPORT_PATH: ${{ github.workspace }}/build/export
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          npm ci || npm install
+
+      - name: Build web bundle
+        run: npm run build
+
+      - name: Install CocoaPods
+        run: sudo gem install cocoapods -N
+
+      - name: Add iOS platform (if missing) and sync
+        run: |
+          npx cap add ios || true
+          npx cap sync ios
+
+      - name: Pod install
+        working-directory: ios/App
+        run: pod install --repo-update
+
+      - name: Import signing certificates and profiles
+        if: ${{ secrets.IOS_CERT_P12_BASE64 && secrets.IOS_CERT_PASSWORD && secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        uses: apple-actions/import-codesign-certs@v2
+        with:
+          p12-file-base64: ${{ secrets.IOS_CERT_P12_BASE64 }}
+          p12-password: ${{ secrets.IOS_CERT_PASSWORD }}
+          profile-file-base64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+
+      - name: Xcode archive (Release)
+        run: |
+          xcodebuild \
+            -workspace "$IOS_WORKSPACE" \
+            -scheme "$IOS_SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$ARCHIVE_PATH" \
+            PRODUCT_BUNDLE_IDENTIFIER=$APP_ID \
+            clean archive | xcpretty && exit ${PIPESTATUS[0]}
+
+      - name: Prepare ExportOptions.plist
+        run: |
+          cat > ExportOptions.plist <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store</string>
+            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.church.memory.app.v15</key><string>${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}</string>
+            </dict>
+            <key>compileBitcode</key><false/>
+            <key>uploadBitcode</key><false/>
+            <key>stripSwiftSymbols</key><true/>
+            <key>destination</key><string>export</string>
+          </dict>
+          </plist>
+          PLIST
+
+      - name: Export .ipa
+        run: |
+          mkdir -p "$EXPORT_PATH"
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportPath "$EXPORT_PATH" \
+            -exportOptionsPlist ExportOptions.plist | xcpretty && exit ${PIPESTATUS[0]}
+
+      - name: Upload artifact (.ipa)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: build/export/*.ipa
+
+      - name: Upload to TestFlight (iTMSTransporter)
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.upload == 'true') || startsWith(github.ref, 'refs/tags/ios-v') }}
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
+          ITC_PROVIDER: ${{ secrets.ITC_PROVIDER }}
+        run: |
+          IPA_PATH=$(ls "$EXPORT_PATH"/*.ipa | head -n 1)
+          if [ -z "$IPA_PATH" ]; then echo "No IPA found"; exit 1; fi
+          if [ -z "$APPLE_ID" ] || [ -z "$APP_SPECIFIC_PASSWORD" ]; then echo "Missing APPLE_ID or APP_SPECIFIC_PASSWORD"; exit 1; fi
+          if [ -n "$ITC_PROVIDER" ]; then
+            xcrun iTMSTransporter -m upload -assetFile "$IPA_PATH" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD" -itc_provider "$ITC_PROVIDER"
+          else
+            xcrun iTMSTransporter -m upload -assetFile "$IPA_PATH" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD"
+          fi
+          echo "✅ Uploaded to TestFlight"
+
+

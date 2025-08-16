@@ -1,14 +1,14 @@
-import { type Verse, type Event, type InsertVerse, type InsertEvent } from "@shared/schema";
+import { type Verse, type Event } from "@shared/schema";
 
 // Storage interface for church verse and event management
 export interface IStorage {
   getVerses(): Promise<Verse[]>;
   getVersesByAgeGroup(ageGroup: string): Promise<Verse[]>;
-  createVerse(verse: InsertVerse): Promise<Verse>;
+  createVerse(verse: Omit<Verse, 'id'>): Promise<Verse>;
   
   getEvents(): Promise<Event[]>;
   getEventsByDate(date: string): Promise<Event[]>;
-  createEvent(event: InsertEvent): Promise<Event>;
+  createEvent(event: Omit<Event, 'id'>): Promise<Event>;
 }
 
 export class MemStorage implements IStorage {
@@ -34,12 +34,11 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async createVerse(insertVerse: InsertVerse): Promise<Verse> {
+  async createVerse(insertVerse: Omit<Verse, 'id'>): Promise<Verse> {
     const id = this.currentVerseId++;
     const verse: Verse = { 
       ...insertVerse, 
-      id,
-      additionalInfo: insertVerse.additionalInfo ?? null
+      id
     };
     this.verses.set(id, verse);
     return verse;
@@ -55,7 +54,7 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async createEvent(insertEvent: InsertEvent): Promise<Event> {
+  async createEvent(insertEvent: Omit<Event, 'id'>): Promise<Event> {
     const id = this.currentEventId++;
     const event: Event = { 
       ...insertEvent, 

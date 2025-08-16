@@ -1,6 +1,6 @@
 {
-  "name": "교회학교 암송 말씀",
-  "short_name": "암송말씀",
+  "name": "교회학교 암송",
+  "short_name": "교회학교 암송",
   "description": "교회학교 암송 말씀 관리 앱",
   "start_url": "/",
   "display": "standalone",

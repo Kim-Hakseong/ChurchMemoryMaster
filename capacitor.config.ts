@@ -1,0 +1,21 @@
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.church.memory.app.v15',
+  appName: '교회학교 암송',
+  webDir: 'dist/public',
+  server: {
+    androidScheme: 'https',
+    cleartext: true,
+    hostname: 'localhost',
+    iosScheme: 'https'
+  },
+  android: {
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true,
+    appendUserAgent: 'ChurchMemoryApp/2.3'
+  }
+};
+
+export default config;

@@ -27,10 +27,11 @@ export default function CaptureButton() {
       onClick={handleCapture}
       size="sm"
       variant="outline"
-      className="fixed top-4 right-4 z-50 bg-white/80 backdrop-blur-lg border border-gray-200 hover:bg-white/90 shadow-lg"
+      className="fixed top-10 right-4 z-50 bg-white/80 backdrop-blur-lg border border-gray-200 hover:bg-white/90 shadow-lg flex items-center justify-center min-w-[80px] h-8 active:scale-100 active:transform-none"
+      data-capture-button="true"
     >
-      <Camera className="w-4 h-4 mr-2" />
-      캡처
+      <Camera className="w-4 h-4 mr-2 flex-shrink-0" />
+      <span className="text-sm font-medium">캡처</span>
     </Button>
   );
 }

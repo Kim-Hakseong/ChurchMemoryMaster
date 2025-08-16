@@ -5,7 +5,7 @@ import type { Event } from "@shared/schema";
 export function useEvents() {
   return useQuery({
     queryKey: ['events'],
-    queryFn: () => LocalStorage.getEvents(),
+    queryFn: async () => await LocalStorage.getEvents(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -13,7 +13,7 @@ export function useEvents() {
 export function useEventsForDate(date: Date) {
   return useQuery({
     queryKey: ['events', date.toISOString().split('T')[0]],
-    queryFn: () => LocalStorage.getEventsForDate(date),
+    queryFn: async () => await LocalStorage.getEventsForDate(date),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -21,22 +21,35 @@ export function useEventsForDate(date: Date) {
 export function useCalendarData(year: number, month: number) {
   return useQuery({
     queryKey: ['calendar', year, month],
-    queryFn: () => {
-      const events = LocalStorage.getEvents();
-      const verses = LocalStorage.getVerses();
+    queryFn: async () => {
+      const events = await LocalStorage.getEvents();
       
-      // Filter events and verses for the given month
+      // 해당 월의 첫째 날과 마지막 날
+      const monthStart = new Date(year, month, 1);
+      const monthEnd = new Date(year, month + 1, 0);
+      
+      // Filter events for the given month
       const monthEvents = events.filter(event => {
         const eventDate = new Date(event.date + 'T00:00:00');
-        return eventDate.getFullYear() === year && eventDate.getMonth() === month;
+        
+        // 기본 이벤트 날짜가 해당 월에 있는 경우
+        if (eventDate.getFullYear() === year && eventDate.getMonth() === month) {
+          return true;
+        }
+        
+        // 기간 이벤트인 경우 (startDate, endDate가 있는 경우)
+        if (event.startDate && event.endDate) {
+          const startDate = new Date(event.startDate + 'T00:00:00');
+          const endDate = new Date(event.endDate + 'T00:00:00');
+          
+          // 이벤트 기간이 해당 월과 겹치는 경우
+          return (startDate <= monthEnd && endDate >= monthStart);
+        }
+        
+        return false;
       });
       
-      const monthVerses = verses.filter(verse => {
-        const verseDate = new Date(verse.date + 'T00:00:00');
-        return verseDate.getFullYear() === year && verseDate.getMonth() === month;
-      });
-      
-      return { events: monthEvents, verses: monthVerses };
+      return { events: monthEvents, verses: [] };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

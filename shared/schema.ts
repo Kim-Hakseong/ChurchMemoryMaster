@@ -1,36 +1,51 @@
-import { pgTable, text, serial, integer, boolean, date, jsonb } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+// Database schemas using Drizzle ORM
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
-export const verses = pgTable("verses", {
-  id: serial("id").primaryKey(),
-  date: date("date").notNull(),
-  verse: text("verse").notNull(),
+export const versesTable = sqliteTable("verses", {
+  id: integer("id").primaryKey(),
+  date: text("date").notNull(),
   reference: text("reference").notNull(),
-  ageGroup: text("age_group").notNull(), // kindergarten, elementary, youth
-  additionalInfo: text("additional_info"),
+  content: text("content").notNull(),
+  ageGroup: text("age_group").notNull(),
 });
 
-export const events = pgTable("events", {
-  id: serial("id").primaryKey(),
-  date: date("date").notNull(),
+export const eventsTable = sqliteTable("events", {
+  id: integer("id").primaryKey(),
+  date: text("date").notNull(),
   title: text("title").notNull(),
   description: text("description"),
   ageGroup: text("age_group"),
+  startDate: text("start_date"),
+  endDate: text("end_date"),
 });
 
-export const insertVerseSchema = createInsertSchema(verses).omit({
-  id: true,
-});
+// TypeScript types for client-side use
+export type AgeGroup = 'kindergarten' | 'elementary' | 'youth';
 
-export const insertEventSchema = createInsertSchema(events).omit({
-  id: true,
-});
+export interface Verse {
+  id: number;
+  date: string;
+  reference: string;
+  content: string;
+  ageGroup: AgeGroup;
+  lessonName?: string; // 공과명 (주간 암송구절용)
+}
 
-export type InsertVerse = z.infer<typeof insertVerseSchema>;
-export type Verse = typeof verses.$inferSelect;
-export type InsertEvent = z.infer<typeof insertEventSchema>;
-export type Event = typeof events.$inferSelect;
+export interface Event {
+  id: number;
+  date: string;
+  title: string;
+  description: string | null;
+  ageGroup: AgeGroup | null;
+  startDate?: string | null;
+  endDate?: string | null;
+}
 
-export const ageGroups = ["kindergarten", "elementary", "youth"] as const;
-export type AgeGroup = typeof ageGroups[number];
+// Monthly verse for elementary school
+export interface MonthlyVerse {
+  id: number;
+  year: number;
+  month: number;
+  reference: string;
+  content: string;
+}

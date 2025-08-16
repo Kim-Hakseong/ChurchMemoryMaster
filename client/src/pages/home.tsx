@@ -1,200 +1,254 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Bell, TrendingUp, Users, Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Image as ImageIcon, Home as HomeIcon, Settings, Baby, Users, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useWeeklyVerses, useVersesStats } from "@/hooks/use-verses";
+import { useWeeklyVerses } from "@/hooks/use-verses";
 import { useToast } from "@/hooks/use-toast";
-import VerseCard from "@/components/verse-card";
-import BottomNavigation from "@/components/bottom-navigation";
-import ExcelUploader from "@/components/excel-uploader";
-import CalendarModal from "@/components/calendar-modal";
-import CaptureButton from "@/components/capture-button";
-import { formatDateRange, getLastWeekRange, getCurrentWeekRange, getNextWeekRange, formatDate } from "@/lib/date-utils";
 import { LocalStorage } from "@/lib/storage";
+import { Link } from "wouter";
+import { useCalendarData } from "@/hooks/use-calendar";
+import BottomNavigation from "@/components/bottom-navigation";
 
 export default function Home() {
   const [showCalendar, setShowCalendar] = useState(false);
-  const [hasData, setHasData] = useState(() => LocalStorage.getVerses().length > 0);
+  const [hasData] = useState(() => LocalStorage.getVerses().length > 0);
   const { toast } = useToast();
 
-  const { data: weeklyVerses } = useWeeklyVerses("elementary");
-  const { data: stats } = useVersesStats();
+  const { data: elementaryWeekly } = useWeeklyVerses("elementary");
+  const { data: kindergartenWeekly } = useWeeklyVerses("kindergarten");
+  const { data: youthWeekly } = useWeeklyVerses("youth");
+  const today = new Date();
+  const { data: calendarData } = useCalendarData(today.getFullYear(), today.getMonth());
 
-  const lastWeekRange = getLastWeekRange();
-  const thisWeekRange = getCurrentWeekRange();
-  const nextWeekRange = getNextWeekRange();
-
-
-
-  const handleShare = async () => {
-    if (weeklyVerses?.thisWeek) {
-      const verse = weeklyVerses.thisWeek;
-      const text = `"${verse.verse}" - ${verse.reference}`;
-      
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: '이번 주 암송 말씀',
-            text: text,
-          });
-        } catch (error) {
-          // User cancelled sharing
-        }
-      } else {
-        await navigator.clipboard.writeText(text);
-        toast({
-          title: "클립보드에 복사됨",
-          description: "암송 말씀이 클립보드에 복사되었습니다.",
-        });
-      }
-    }
+  // 진행률 계산 유틸리티
+  const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+  const startOfDayUTC = (d: Date) => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  const weeksBetween = (start: Date, end: Date) => {
+    const diff = startOfDayUTC(end) - startOfDayUTC(start);
+    return Math.max(0, Math.floor(diff / WEEK_MS));
   };
+  // 1년 치 진행률 (52주 기준)
+  const yearStart = new Date(today.getFullYear(), 0, 1);
+  const oneYearProgress = Math.min(1, weeksBetween(yearStart, today) / 52);
+  // 전체 싸이클 진행률: 유치부 1년, 초등부 2년, 중고등부 3년 (주 단위)
+  const anchor = new Date(2024, 0, 1); // 싸이클 기준 시작일 (필요 시 조정 가능)
+  const weeksSinceAnchor = weeksBetween(anchor, today);
+  const progressKindergarten = Math.min(1, (weeksSinceAnchor % 52) / 52);
+  const progressElementary = Math.min(1, (weeksSinceAnchor % 104) / 104);
+  const progressYouth = Math.min(1, (weeksSinceAnchor % 156) / 156);
 
   if (!hasData) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <CaptureButton />
-        <div className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6">
-          <ExcelUploader onUploadComplete={() => setHasData(true)} />
-        </div>
-        <BottomNavigation />
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center space-y-6"
+        >
+          <div className="verse-card">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-primary mx-auto mb-6"></div>
+            <p className="text-gray-800 text-lg font-semibold">데이터를 불러오는 중...</p>
+            <p className="text-gray-500 text-sm mt-2">교회학교 암송 데이터를 준비하고 있습니다</p>
+          </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <CaptureButton />
-      
-      {/* Header */}
-      <header className="relative z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-4 sm:px-6 py-4">
-        <div className="flex items-center justify-between max-w-4xl mx-auto">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center">
-              <i className="fas fa-bible text-white text-lg"></i>
+    <div className="min-h-screen relative pb-16">
+      {/* 상단 고정 바 (다른 탭과 동일 양식) */}
+      <header className="fixed top-0 left-0 right-0 pt-10 pb-4 px-6 bg-gradient-to-r from-blue-50 to-purple-50 z-40">
+        <div className="flex items-center justify-between h-12">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+              <HomeIcon className="text-indigo-600 w-4 h-4" />
             </div>
-            <div>
-              <h1 className="text-lg font-semibold text-gray-800">교회학교 암송</h1>
-              <p className="text-xs text-gray-500">{formatDate(new Date())}</p>
-            </div>
+            <h1 className="text-xl font-bold text-gray-800">메인화면</h1>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-10 h-10 p-0 hover:bg-gray-100"
-          >
-            <Bell className="w-5 h-5 text-gray-600" />
-          </Button>
+          {/* 우측: 통일된 버튼 스타일 */}
+          <div className="flex flex-col space-y-1 mr-2">
+            <Link href="/splash">
+              <a className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white shadow border text-gray-700 hover:bg-gray-50 text-xs min-w-[100px] justify-center">
+                <ImageIcon className="w-4 h-4" /> 교육목표
+              </a>
+            </Link>
+            <Link href="/settings">
+              <a className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white shadow border text-gray-700 hover:bg-gray-50 text-xs min-w-[100px] justify-center">
+                <Settings className="w-4 h-4" /> 설정
+              </a>
+            </Link>
+          </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="relative z-10 flex-1 px-4 sm:px-6 py-6 pb-24">
-        <div className="max-w-4xl mx-auto space-y-6">
-        {/* Weekly Verses Section */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-800">이번 주 암송 말씀</h2>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-500">실시간 업데이트</span>
+      <main className="relative z-10 container mx-auto px-4 py-6 space-y-6 mt-24">
+
+        {/* Weekly Verses Quick Links */}
+        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="verse-card">
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-gray-800">이번 주 암송 말씀</h2>
+            </div>
+            <div className="grid md:grid-cols-3 gap-3">
+              <div className="verse-card">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-6 h-6 rounded-full bg-pink-100 flex items-center justify-center">
+                    <Baby className="text-pink-600 w-3 h-3" />
+                  </div>
+                  <p className="text-gray-500 text-xs">유치부</p>
+                </div>
+                {kindergartenWeekly?.thisWeek ? (
+                  <div className="space-y-1">
+                    {kindergartenWeekly.thisWeek.lessonName && (
+                      <div className="text-gray-900 font-medium">{kindergartenWeekly.thisWeek.lessonName}</div>
+                    )}
+                    <div className="text-gray-800 text-sm whitespace-pre-line">{kindergartenWeekly.thisWeek.content}</div>
+                    <div className="text-xs text-gray-500">{kindergartenWeekly.thisWeek.reference}</div>
+                  </div>
+                ) : (
+                  <p className="text-gray-800 text-sm">이번 주 암송을 확인하세요</p>
+                )}
+              </div>
+              <div className="verse-card">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Users className="text-blue-600 w-3 h-3" />
+                  </div>
+                  <p className="text-gray-500 text-xs">초등부</p>
+                </div>
+                {elementaryWeekly?.thisWeek ? (
+                  <div className="space-y-1">
+                    {elementaryWeekly.thisWeek.lessonName && (
+                      <div className="text-gray-900 font-medium">{elementaryWeekly.thisWeek.lessonName}</div>
+                    )}
+                    <div className="text-gray-800 text-sm whitespace-pre-line">{elementaryWeekly.thisWeek.content}</div>
+                    <div className="text-xs text-gray-500">{elementaryWeekly.thisWeek.reference}</div>
+                  </div>
+                ) : (
+                  <p className="text-gray-800 text-sm">이번 주 암송을 확인하세요</p>
+                )}
+              </div>
+              <div className="verse-card">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                    <GraduationCap className="text-green-600 w-3 h-3" />
+                  </div>
+                  <p className="text-gray-500 text-xs">중고등부</p>
+                </div>
+                {youthWeekly?.thisWeek ? (
+                  <div className="space-y-1">
+                    {youthWeekly.thisWeek.lessonName && (
+                      <div className="text-gray-900 font-medium">{youthWeekly.thisWeek.lessonName}</div>
+                    )}
+                    <div className="text-gray-800 text-sm whitespace-pre-line">{youthWeekly.thisWeek.content}</div>
+                    <div className="text-xs text-gray-500">{youthWeekly.thisWeek.reference}</div>
+                  </div>
+                ) : (
+                  <p className="text-gray-800 text-sm">이번 주 암송을 확인하세요</p>
+                )}
+              </div>
             </div>
           </div>
+        </motion.section>
 
-          <div className="space-y-4">
-            <VerseCard
-              verse={weeklyVerses?.lastWeek || null}
-              weekType="last"
-              dateRange={formatDateRange(lastWeekRange.start, lastWeekRange.end)}
-            />
-            <VerseCard
-              verse={weeklyVerses?.thisWeek || null}
-              weekType="current"
-              dateRange={formatDateRange(thisWeekRange.start, thisWeekRange.end)}
-              onShare={handleShare}
-            />
-            <VerseCard
-              verse={weeklyVerses?.nextWeek || null}
-              weekType="next"
-              dateRange={formatDateRange(nextWeekRange.start, nextWeekRange.end)}
-            />
-          </div>
-        </section>
-
-        {/* Stats Section */}
-        <section className="verse-card">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">이번 달 암송 현황</h3>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center mx-auto mb-2">
-                <span className="text-white font-bold text-lg">{stats?.completed || 0}</span>
-              </div>
-              <p className="text-xs text-gray-500">완료</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 gradient-secondary rounded-xl flex items-center justify-center mx-auto mb-2">
-                <span className="text-white font-bold text-lg">{stats?.inProgress || 0}</span>
-              </div>
-              <p className="text-xs text-gray-500">진행중</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-gradient-to-br from-accent to-green-500 rounded-xl flex items-center justify-center mx-auto mb-2">
-                <span className="text-white font-bold text-lg">{stats?.upcoming || 0}</span>
-              </div>
-              <p className="text-xs text-gray-500">예정</p>
+        {/* Ongoing Events */}
+        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="verse-card">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">진행 중인 행사</h2>
+            <div className="space-y-3">
+              {calendarData?.events
+                ?.filter(ev => {
+                  const start = new Date((ev.startDate || ev.date) + 'T00:00:00');
+                  const end = new Date((ev.endDate || ev.date) + 'T00:00:00');
+                  const target = new Date();
+                  start.setHours(0,0,0,0); end.setHours(0,0,0,0); target.setHours(0,0,0,0);
+                  return target >= start && target <= end;
+                })
+                .map(ev => (
+                  <div key={`${ev.id}`} className="verse-card">
+                    <div className="font-medium text-gray-800">{ev.title}</div>
+                    <div className="text-sm text-gray-600">
+                      {new Date((ev.startDate || ev.date) + 'T00:00:00').toLocaleDateString('ko-KR', { month:'long', day:'numeric', weekday:'short' })}
+                      {ev.endDate ? ` ~ ${new Date(ev.endDate + 'T00:00:00').toLocaleDateString('ko-KR', { month:'long', day:'numeric', weekday:'short' })}` : ''}
+                    </div>
+                    {ev.description && <div className="text-xs text-gray-500 mt-1 whitespace-pre-line">{ev.description}</div>}
+                  </div>
+                ))
+                ?? <p className="text-gray-500">오늘 포함된 일정이 없습니다.</p>}
             </div>
           </div>
-        </section>
+        </motion.section>
 
-        {/* Age Group Quick Access */}
-        <section className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">연령별 바로가기</h3>
-          <div className="grid grid-cols-3 gap-3">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="verse-card text-center"
-              onClick={() => window.location.href = '/age-group/kindergarten'}
-            >
-              <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-red-400 rounded-xl flex items-center justify-center mx-auto mb-2">
-                <i className="fas fa-baby text-white"></i>
+        {/* 대시보드 */}
+        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="verse-card">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">커리큘럼 진행률</h2>
+            {/* 1) 전체 진행률 (부서별 싸이클) */}
+            <div className="space-y-3 mb-6">
+              {/* 유치부 */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-pink-100 flex items-center justify-center">
+                      <Baby className="text-pink-600 w-3 h-3" />
+                    </div>
+                    <span className="text-sm text-gray-700">유치부</span>
+                  </div>
+                  <span className="text-sm text-green-600 font-medium">{Math.round(progressKindergarten * 100)}%</span>
+                </div>
+                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-3 bg-yellow-400" style={{ width: `${Math.round(progressKindergarten * 100)}%` }} />
+                </div>
               </div>
-              <p className="text-sm font-medium text-gray-700">유치부</p>
-              <p className="text-xs text-gray-500">5-7세</p>
-            </motion.button>
+              {/* 초등부 */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                      <Users className="text-blue-600 w-3 h-3" />
+                    </div>
+                    <span className="text-sm text-gray-700">초등부</span>
+                  </div>
+                  <span className="text-sm text-green-600 font-medium">{Math.round(progressElementary * 100)}%</span>
+                </div>
+                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-3 bg-yellow-400" style={{ width: `${Math.round(progressElementary * 100)}%` }} />
+                </div>
+              </div>
+              {/* 중고등부 */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                      <GraduationCap className="text-green-600 w-3 h-3" />
+                    </div>
+                    <span className="text-sm text-gray-700">중고등부</span>
+                  </div>
+                  <span className="text-sm text-green-600 font-medium">{Math.round(progressYouth * 100)}%</span>
+                </div>
+                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-3 bg-yellow-400" style={{ width: `${Math.round(progressYouth * 100)}%` }} />
+                </div>
+              </div>
+            </div>
 
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="verse-card text-center"
-              onClick={() => window.location.href = '/age-group/elementary'}
-            >
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-xl flex items-center justify-center mx-auto mb-2">
-                <Users className="w-5 h-5 text-white" />
+            {/* 2) 1년 치 진행률 (52주) */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm text-gray-700">올해 진행률</span>
+                <span className="text-sm text-green-600 font-medium">{Math.round(oneYearProgress * 100)}%</span>
               </div>
-              <p className="text-sm font-medium text-gray-700">초등부</p>
-              <p className="text-xs text-gray-500">8-13세</p>
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="verse-card text-center"
-              onClick={() => window.location.href = '/age-group/youth'}
-            >
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-xl flex items-center justify-center mx-auto mb-2">
-                <i className="fas fa-user-graduate text-white"></i>
+              <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-3 bg-primary" style={{ width: `${Math.round(oneYearProgress * 100)}%` }} />
               </div>
-              <p className="text-sm font-medium text-gray-700">중‧고등부</p>
-              <p className="text-xs text-gray-500">14-18세</p>
-            </motion.button>
+            </div>
           </div>
-        </section>
-        </div>
+        </motion.section>
+
+        {/* 데이터 소스 안내 섹션 제거 */}
       </main>
-
       <BottomNavigation />
-      <CalendarModal isOpen={showCalendar} onClose={() => setShowCalendar(false)} />
     </div>
   );
 }

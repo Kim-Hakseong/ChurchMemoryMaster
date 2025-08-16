@@ -1,5 +1,5 @@
 // Service Worker for PWA
-const CACHE_NAME = 'church-memory-v1';
+const CACHE_NAME = 'church-memory-v14-' + Date.now();
 const urlsToCache = [
   '/',
   '/manifest.json'

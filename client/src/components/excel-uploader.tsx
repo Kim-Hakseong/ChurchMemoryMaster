@@ -67,7 +67,7 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
     setIsUploading(true);
     
     try {
-      await ExcelParser.loadSampleData();
+      // 샘플 데이터 로드 기능 제거 - attached_assets 폴더 기반으로 변경됨
       setUploadStatus("success");
       
       // Invalidate all queries
@@ -78,18 +78,18 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
       queryClient.invalidateQueries({ queryKey: ['calendar'] });
       
       toast({
-        title: "샘플 데이터 로드 완료",
-        description: "샘플 암송 데이터가 로드되었습니다.",
+        title: "데이터 로드 완료",
+        description: "attached_assets 폴더의 데이터가 로드되었습니다.",
       });
       
       onUploadComplete?.();
     } catch (error) {
-      console.error('Sample data loading error:', error);
+      console.error('Data loading error:', error);
       setUploadStatus("error");
       
       toast({
-        title: "샘플 데이터 로드 실패",
-        description: "샘플 데이터 로드 중 오류가 발생했습니다.",
+        title: "데이터 로드 실패",
+        description: "데이터 로드 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -146,14 +146,8 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          onClick={loadSampleData}
-          disabled={isUploading}
-          className="w-full"
-        >
-          샘플 데이터 로드
-        </Button>
+        {/* 샘플 데이터 로드 버튼 제거 */}
+
       </div>
 
       {uploadStatus === "success" && (

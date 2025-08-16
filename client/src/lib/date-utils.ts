@@ -7,12 +7,14 @@ export function getCurrentWeekRange(date = new Date()): WeekRange {
   const current = new Date(date);
   const currentDay = current.getDay(); // 0 = Sunday, 1 = Monday, etc.
   
-  // Calculate the start of the week (Sunday)
+  // Calculate the start of the week (Monday)
+  // 월요일 기준: 일요일(0)이면 6일 전, 월-토(1-6)이면 (currentDay-1)일 전
+  const daysToSubtract = currentDay === 0 ? 6 : currentDay - 1;
   const start = new Date(current);
-  start.setDate(current.getDate() - currentDay);
+  start.setDate(current.getDate() - daysToSubtract);
   start.setHours(0, 0, 0, 0);
   
-  // Calculate the end of the week (Saturday)
+  // Calculate the end of the week (Sunday)
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
   end.setHours(23, 59, 59, 999);

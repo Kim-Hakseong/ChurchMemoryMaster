@@ -1,0 +1,158 @@
+name: iOS AdHoc OTA (IPA + manifest)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-adhoc:
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web (Vite)
+        run: npm run build
+
+      - name: Install Capacitor CLI
+        run: npm i -g @capacitor/cli
+
+      - name: Add/Sync iOS platform
+        run: |
+          if [ ! -d ios ]; then
+            npx cap add ios --skip-dependencies
+          fi
+          npx cap sync ios
+
+      - name: Install Cocoapods
+        run: |
+          sudo gem install cocoapods -N
+          cd ios/App && pod install --repo-update
+
+      - name: Setup Ruby & fastlane
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+      - run: sudo gem install fastlane -N
+
+      - name: Provisioning via match (adhoc)
+        env:
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APP_BUNDLE_ID: ${{ secrets.APP_BUNDLE_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
+        run: |
+          READONLY=true
+          if [ -n "$FASTLANE_SESSION" ] && [ -n "$APPLE_ID" ]; then
+            READONLY=false
+          fi
+          fastlane run match type:"adhoc" app_identifier:"$APP_BUNDLE_ID" readonly:$READONLY git_url:"$MATCH_GIT_URL" storage_mode:"git" username:"$APPLE_ID"
+
+      - name: Build IPA (ad-hoc)
+        env:
+          APP_BUNDLE_ID: ${{ secrets.APP_BUNDLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          fastlane run build_app \
+            workspace:"ios/App/App.xcworkspace" \
+            scheme:"App" \
+            configuration:"Release" \
+            export_method:"ad-hoc" \
+            output_directory:"build_adhoc" \
+            output_name:"App.ipa" \
+            xcargs:"DEVELOPMENT_TEAM=$APPLE_TEAM_ID PRODUCT_BUNDLE_IDENTIFIER=$APP_BUNDLE_ID CURRENT_PROJECT_VERSION=$GITHUB_RUN_NUMBER -allowProvisioningUpdates"
+
+      - name: Extract Info.plist values
+        id: plist
+        run: |
+          INFO_PLIST="ios/App/App/Info.plist"
+          APP_NAME=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$INFO_PLIST") || APP_NAME="ChurchMemory"
+          BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$INFO_PLIST") || BUNDLE_ID="com.example.app"
+          VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$INFO_PLIST") || VERSION="1.0.0"
+          BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$INFO_PLIST") || BUILD="1"
+          echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
+          echo "bundle_id=$BUNDLE_ID" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build=$BUILD" >> $GITHUB_OUTPUT
+
+      - name: Generate manifest.plist & install page
+        env:
+          IPA_PUBLIC_URL: ${{ secrets.IPA_PUBLIC_URL }}
+        run: |
+          IPA_URL=${IPA_PUBLIC_URL:-https://example.com/App.ipa}
+          cat > manifest.plist << PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+            <dict>
+              <key>items</key>
+              <array>
+                <dict>
+                  <key>assets</key>
+                  <array>
+                    <dict>
+                      <key>kind</key>
+                      <string>software-package</string>
+                      <key>url</key>
+                      <string>${IPA_URL}</string>
+                    </dict>
+                  </array>
+                  <key>metadata</key>
+                  <dict>
+                    <key>bundle-identifier</key>
+                    <string>${{ steps.plist.outputs.bundle_id }}</string>
+                    <key>bundle-version</key>
+                    <string>${{ steps.plist.outputs.version }}</string>
+                    <key>kind</key>
+                    <string>software</string>
+                    <key>title</key>
+                    <string>${{ steps.plist.outputs.app_name }}</string>
+                  </dict>
+                </dict>
+              </array>
+            </dict>
+          </plist>
+          PLIST
+
+          ENCODED_MANIFEST_URL=""
+          if [ -n "$IPA_PUBLIC_URL" ]; then
+            # If user provides manifest URL later, they should host manifest.plist and update below link accordingly.
+            ENCODED_MANIFEST_URL="https://example.com/manifest.plist"
+          fi
+
+          cat > install.html << HTML
+          <!doctype html>
+          <html>
+          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Install iOS App</title></head>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 20px;">
+            <h2>iOS App 설치</h2>
+            <p>아래 버튼을 iPhone 사파리에서 열어 설치하세요.</p>
+            <p>
+              <a href="itms-services://?action=download-manifest&url=MANIFEST_URL_HERE"
+                 style="display:inline-block;padding:12px 16px;background:#2563eb;color:#fff;border-radius:8px;text-decoration:none;">설치하기</a>
+            </p>
+            <p style="color:#666;font-size:14px;">주의: 이 방식은 Ad Hoc 서명 + UDID 등록이 필요합니다.</p>
+          </body>
+          </html>
+          HTML
+
+      - name: Upload artifacts (IPA + manifest + installer)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-adhoc-ota
+          path: |
+            build_adhoc/App.ipa
+            manifest.plist
+            install.html
+
+
