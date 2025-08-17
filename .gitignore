@@ -11,3 +11,15 @@ ios/Pods/
 .vscode/
 *.log
 .DS_Store
+# archives & secrets
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.ipa
+*.apk
+*.aab
+*.map
+coverage/
+.env*
