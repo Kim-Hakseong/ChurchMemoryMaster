@@ -37,6 +37,10 @@ jobs:
           sudo gem install cocoapods -N
           cd ios/App && pod install --repo-update
 
+      - name: Install xcpretty (for readable xcodebuild logs)
+        run: |
+          sudo gem install xcpretty -N || true
+
       - name: Build unsigned .app (CODE_SIGNING_ALLOWED=NO)
         run: |
           xcodebuild \
