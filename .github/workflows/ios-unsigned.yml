@@ -25,6 +25,9 @@ jobs:
       - name: Install Capacitor CLI
         run: npm i -g @capacitor/cli
 
+      - name: Install Capacitor iOS platform package
+        run: npm install @capacitor/ios@^7
+
       - name: Add/Sync iOS platform
         run: |
           if [ ! -d ios ]; then
