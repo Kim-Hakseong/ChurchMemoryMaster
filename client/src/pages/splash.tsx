@@ -3,7 +3,6 @@ import { ChevronLeft, Download } from "lucide-react";
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
-let CameraRoll: any = null;
 
 export default function SplashPage() {
   const handleDownload = async () => {
@@ -20,19 +19,12 @@ export default function SplashPage() {
         for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
         const base64String = btoa(binary);
         const fileName = `교육목표_${new Date().toISOString().slice(0,10)}.jpg`;
-        // iOS: 파일 공유(Web Share Level 2)로 저장 유도 → '사진에 저장' 제공 기기 다수
-        try {
-          const blob = new Blob([Uint8Array.from(atob(base64String), c => c.charCodeAt(0))], { type: 'image/jpeg' });
-          const file = new File([blob], `splash_${Date.now()}.jpg`, { type: 'image/jpeg' });
-          if ((navigator as any).canShare?.({ files: [file] })) {
-            await (navigator as any).share({ files: [file], title: '교육목표 이미지' });
-            alert('공유 시트에서 저장을 완료해 주세요.');
-            return;
-          }
-        } catch {}
-        // 폴백: URL 공유 시트
-        await Share.share({ title: '교육목표 이미지', url: `data:image/jpeg;base64,${base64String}` });
-        alert('공유 시트에서 저장해주세요.');
+        // iOS: Cache에 파일 저장 후 Share에 파일 URL 전달
+        const tempName = `splash_${Date.now()}.jpg`;
+        await Filesystem.writeFile({ path: tempName, data: base64String, directory: Directory.Cache });
+        const uri = await Filesystem.getUri({ directory: Directory.Cache, path: tempName });
+        await Share.share({ title: '교육목표 이미지', url: uri.uri });
+        alert('공유 시트에서 "사진에 저장"을 선택해 주세요.');
         return;
       } else {
         // 웹 다운로드
