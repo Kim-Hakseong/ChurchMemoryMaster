@@ -65,7 +65,7 @@ async function generateIcons() {
     }
 
     console.log('✅ 모든 아이콘 생성 완료!');
-    console.log('🔄 다음 단계: npx cap sync android 실행하세요.');
+    console.log('🔄 다음 단계: npx cap sync ios && npx cap sync android 실행하세요.');
 
   } catch (error) {
     console.error('❌ 아이콘 생성 실패:', error);

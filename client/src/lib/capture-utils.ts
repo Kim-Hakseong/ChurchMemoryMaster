@@ -1,6 +1,9 @@
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
+// iOS 사진 앱 저장용
+let CameraRoll: any = null;
+try { CameraRoll = (await import('@capacitor-community/camera-roll')).CameraRoll as any; } catch {}
 
 let isCapturing = false;
 
@@ -62,7 +65,17 @@ export const captureScreen = async (): Promise<void> => {
       try {
         const platform = Capacitor.getPlatform();
         if (platform === 'ios') {
-          // iOS: 갤러리 노출을 위해 직접 공유 시트만 표시 (Save Image 선택 유도)
+          try {
+            // iOS: 파일 공유(Web Share Level 2) 시도 → '사진에 저장' 항목이 나타나는 경우가 많음
+            const blob = await (await fetch(base64Data)).blob();
+            const file = new File([blob], `capture_${Date.now()}.png`, { type: 'image/png' });
+            if ((navigator as any).canShare?.({ files: [file] })) {
+              await (navigator as any).share({ files: [file], title: '교회 암송 말씀' });
+              if (navigator.vibrate) navigator.vibrate(200);
+              return;
+            }
+          } catch {}
+          // 폴백: 공유 시트(URL)
           await Share.share({ title: '교회 암송 말씀', url: base64Data });
           if (navigator.vibrate) navigator.vibrate(200);
           return;
