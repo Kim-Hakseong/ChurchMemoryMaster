@@ -1,5 +1,6 @@
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 
 let isCapturing = false;
 
@@ -75,6 +76,25 @@ export const captureScreen = async (): Promise<void> => {
         });
         
         console.log('파일 저장 성공:', result.uri);
+        let fileUrl = result.uri;
+        try {
+          const uri = await Filesystem.getUri({ directory: Directory.Documents, path: fileName });
+          if (uri?.uri) fileUrl = uri.uri;
+        } catch {}
+        
+        // iOS에서는 Documents에만 저장하면 사용자가 접근하기 어려우므로 공유 시트 표시
+        try {
+          const platform = Capacitor.getPlatform();
+          if (platform === 'ios') {
+            await Share.share({
+              title: '교회 암송 말씀',
+              text: '이미지를 사진 앱에 저장하거나 공유하세요.',
+              url: fileUrl
+            });
+          }
+        } catch (shareErr) {
+          console.warn('공유 시트 표시 실패(무시 가능):', shareErr);
+        }
         
         // 저장 성공을 사용자에게 알림
         if (navigator.vibrate) {

@@ -1,5 +1,6 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 import type { Event } from '@shared/schema';
 import { LocalStorage } from './storage';
 
@@ -28,6 +29,41 @@ function eventsToCSV(events: Event[]): string {
     rows.push(row.join(','));
   }
   return rows.join('\n');
+}
+
+// 간단 ICS(캘린더) 포맷으로 내보내기 – iOS 호환성 개선
+function eventsToICS(events: Event[]): string {
+  const lines: string[] = [];
+  lines.push('BEGIN:VCALENDAR');
+  lines.push('VERSION:2.0');
+  lines.push('PRODID:-//ChurchMemoryMaster//Korean//');
+  for (const e of events) {
+    const uid = `${e.id}@churchmemorymaster`;
+    const dtstamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const start = (e.startDate || e.date);
+    const end = (e.endDate || e.date);
+    // 종일 이벤트로 정의 (TZID 없이 DATE 형식)
+    const fmt = (s: string) => s.replace(/-/g, '');
+    const dtStart = fmt(start);
+    const dtEnd = fmt(end);
+
+    lines.push('BEGIN:VEVENT');
+    lines.push(`UID:${uid}`);
+    lines.push(`DTSTAMP:${dtstamp}`);
+    lines.push(`DTSTART;VALUE=DATE:${dtStart}`);
+    // 종료일은 다음날로 지정해야 종일 범위가 포함됨 (RFC에 따라)
+    const endDate = new Date((end || start) + 'T00:00:00Z');
+    endDate.setUTCDate(endDate.getUTCDate() + 1);
+    const endStr = endDate.toISOString().slice(0,10).replace(/-/g, '');
+    lines.push(`DTEND;VALUE=DATE:${endStr}`);
+    lines.push(`SUMMARY:${(e.title || '').replace(/\n/g, ' ')}`);
+    if (e.description) {
+      lines.push(`DESCRIPTION:${e.description.replace(/\n/g, ' ')}`);
+    }
+    lines.push('END:VEVENT');
+  }
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n');
 }
 
 function parseCSV(text: string): string[][] {
@@ -112,6 +148,21 @@ async function writeTextFilePreferDownloads(fileName: string, text: string): Pro
     return uri.uri;
   };
 
+  // iOS: Documents에 저장 후 공유 시트로 내보내기 (파일 앱/메일 등)
+  try {
+    if (Capacitor.getPlatform() === 'ios') {
+      const uri = await tryWrite(Directory.Documents, fileName);
+      try {
+        await Share.share({
+          title: '캘린더 CSV',
+          text: 'iOS에서 CSV를 파일 앱이나 Numbers로 열 수 있습니다.',
+          url: uri
+        });
+      } catch {}
+      return uri;
+    }
+  } catch {}
+
   // 1) 공용 다운로드 영역 우선 (ExternalStorage/Download)
   try {
     const ExternalStorage: any = (Directory as any).ExternalStorage ?? 'EXTERNAL_STORAGE';
@@ -150,6 +201,12 @@ export async function downloadCSVTemplate(): Promise<string> {
 
 export async function exportEventsToCSV(): Promise<string> {
   const events = await LocalStorage.getEvents();
+  // iOS는 CSV 사용성이 낮아 ICS로 내보내기
+  if (Capacitor.getPlatform() === 'ios') {
+    const ics = eventsToICS(events);
+    const fileName = `교회학교_캘린더_${new Date().toISOString().slice(0,10)}.ics`;
+    return await writeTextFilePreferDownloads(fileName, ics);
+  }
   const csv = eventsToCSV(events);
   const fileName = `교회학교_캘린더_${new Date().toISOString().slice(0,10)}.csv`;
   return await writeTextFilePreferDownloads(fileName, csv);

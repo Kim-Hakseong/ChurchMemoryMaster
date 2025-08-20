@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Capacitor } from '@capacitor/core';
 import { motion } from "framer-motion";
 import { ArrowLeft, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Download, Upload, Plus, X, Trash2, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,11 @@ export default function Calendar() {
   const handleExportCsv = async () => {
     try {
       await exportEventsToCSV();
-      toast({ title: "CSV 내보내기 완료", description: "현재 일정이 CSV로 저장되었습니다." });
+      const isIOS = Capacitor.getPlatform() === 'ios';
+      toast({ 
+        title: isIOS ? "캘린더 내보내기 완료" : "CSV 내보내기 완료", 
+        description: isIOS ? "iOS에서는 .ics 형식으로 공유 시트가 열립니다." : "현재 일정이 CSV로 저장되었습니다." 
+      });
     } catch (error) {
       toast({ title: "내보내기 실패", description: "CSV 저장 중 오류가 발생했습니다.", variant: "destructive" });
     }

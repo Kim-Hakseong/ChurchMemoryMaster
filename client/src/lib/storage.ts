@@ -183,16 +183,38 @@ export class LocalStorage {
         }
       ];
 
-      // 기본 이벤트 데이터
+      // 기본 이벤트 데이터 (현재 주/월 기준으로 동적 생성)
+      const today = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const toDateStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      const thisSunday = new Date(today);
+      thisSunday.setDate(today.getDate() - today.getDay());
+      thisSunday.setHours(0,0,0,0);
+      const nextSunday = new Date(thisSunday);
+      nextSunday.setDate(thisSunday.getDate()+7);
+      const threeDayStart = new Date(today);
+      threeDayStart.setDate(today.getDate()+2);
+      const threeDayEnd = new Date(threeDayStart);
+      threeDayEnd.setDate(threeDayStart.getDate()+2);
+
       const fallbackEvents: Event[] = [
         {
           id: 1,
-          date: '2025-01-26',
+          date: toDateStr(thisSunday),
           title: '주일학교 예배',
           description: '주일학교 정기 예배',
           ageGroup: null,
           startDate: null,
           endDate: null
+        },
+        {
+          id: 2,
+          date: toDateStr(threeDayStart),
+          title: '부서 수련회',
+          description: '2박 3일 일정',
+          ageGroup: null,
+          startDate: toDateStr(threeDayStart),
+          endDate: toDateStr(threeDayEnd)
         }
       ];
 

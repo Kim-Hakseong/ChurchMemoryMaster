@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { ChevronLeft, Download } from "lucide-react";
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 
 export default function SplashPage() {
   const handleDownload = async () => {
@@ -18,23 +19,26 @@ export default function SplashPage() {
         for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
         const base64String = btoa(binary);
         const fileName = `교육목표_${new Date().toISOString().slice(0,10)}.jpg`;
-        // 디렉토리 우선순위: ExternalStorage/Download → Documents → External → Cache
         let savedUri = '';
-        const ExternalStorage: any = (Directory as any).ExternalStorage ?? 'EXTERNAL_STORAGE';
         try {
-          savedUri = (await Filesystem.writeFile({ path: `Download/${fileName}`, data: base64String, directory: ExternalStorage })).uri || '';
-        } catch {
+          const write = await Filesystem.writeFile({ path: fileName, data: base64String, directory: Directory.Documents });
+          savedUri = write?.uri || '';
+        } catch {}
+        if (!savedUri) {
           try {
-            savedUri = (await Filesystem.writeFile({ path: fileName, data: base64String, directory: Directory.Documents })).uri || '';
-          } catch {
-            try {
-              savedUri = (await Filesystem.writeFile({ path: fileName, data: base64String, directory: Directory.External })).uri || '';
-            } catch {
-              savedUri = (await Filesystem.writeFile({ path: fileName, data: base64String, directory: Directory.Cache })).uri || '';
-            }
-          }
+            const uri = await Filesystem.getUri({ directory: Directory.Documents, path: fileName });
+            savedUri = uri?.uri || '';
+          } catch {}
         }
-        alert('이미지가 저장되었습니다.');
+        // iOS 사용성 개선: 공유 시트로 사진 앱/파일 앱 저장 유도
+        try {
+          await Share.share({
+            title: '교육목표 이미지',
+            text: '이미지를 사진 앱에 저장하거나 공유하세요.',
+            url: savedUri || `data:image/jpeg;base64,${base64String}`
+          });
+        } catch {}
+        alert('이미지가 저장 또는 공유되었습니다.');
         return;
       } else {
         // 웹 다운로드
