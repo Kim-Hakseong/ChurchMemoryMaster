@@ -31,7 +31,7 @@ jobs:
       - name: Add/Sync iOS platform
         run: |
           if [ ! -d ios ]; then
-            npx cap add ios --yes
+            npx cap add ios
           fi
           npx cap sync ios
 
