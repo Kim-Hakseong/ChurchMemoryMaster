@@ -58,8 +58,9 @@ function App() {
         LocalStorage.clearAll();
         
         // 엑셀 파일 로드
-        const excelUrl = `${window.location.origin}/church_verses.xlsx`;
-        const calendarUrl = `${window.location.origin}/calendar_events.xlsx`;
+        // iOS WebView에서도 접근 가능한 상대 경로 사용
+        const excelUrl = `/church_verses.xlsx`;
+        const calendarUrl = `/calendar_events.xlsx`;
         
         try {
           const response = await fetch(excelUrl, {

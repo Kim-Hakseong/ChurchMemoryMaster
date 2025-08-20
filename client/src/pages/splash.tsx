@@ -34,7 +34,6 @@ export default function SplashPage() {
         try {
           await Share.share({
             title: '교육목표 이미지',
-            text: '이미지를 사진 앱에 저장하거나 공유하세요.',
             url: savedUri || `data:image/jpeg;base64,${base64String}`
           });
         } catch {}

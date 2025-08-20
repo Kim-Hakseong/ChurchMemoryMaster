@@ -88,7 +88,6 @@ export const captureScreen = async (): Promise<void> => {
           if (platform === 'ios') {
             await Share.share({
               title: '교회 암송 말씀',
-              text: '이미지를 사진 앱에 저장하거나 공유하세요.',
               url: fileUrl
             });
           }

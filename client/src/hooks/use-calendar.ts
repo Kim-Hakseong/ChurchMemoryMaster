@@ -23,6 +23,10 @@ export function useCalendarData(year: number, month: number) {
     queryKey: ['calendar', year, month],
     queryFn: async () => {
       const events = await LocalStorage.getEvents();
+      // 폴백: 이벤트가 0개면 엑셀 템플릿에서라도 초기 로드 재시도하도록 로그만 남김
+      if (!events || events.length === 0) {
+        console.log('⚠️ 이벤트가 비어있음. App 초기화 시 엑셀/폴백 데이터 로드를 확인하세요.');
+      }
       
       // 해당 월의 첫째 날과 마지막 날
       const monthStart = new Date(year, month, 1);
