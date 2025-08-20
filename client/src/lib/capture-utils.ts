@@ -60,48 +60,19 @@ export const captureScreen = async (): Promise<void> => {
     if (isNative) {
       // 네이티브 환경: Filesystem API로 파일 저장
       try {
+        const platform = Capacitor.getPlatform();
+        if (platform === 'ios') {
+          // iOS: 갤러리 노출을 위해 직접 공유 시트만 표시 (Save Image 선택 유도)
+          await Share.share({ title: '교회 암송 말씀', url: base64Data });
+          if (navigator.vibrate) navigator.vibrate(200);
+          return;
+        }
+        // Android 등: 파일 저장 후 알림
         const fileName = `교회암송말씀_${new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')}.png`;
-        
-        // base64에서 data:image/png;base64, 부분 제거
         const base64WithoutPrefix = base64Data.replace(/^data:image\/png;base64,/, '');
-        
-        console.log('파일 저장 시도:', fileName);
-        
-        // Documents 디렉토리에 저장 (base64 데이터)
-        const result = await Filesystem.writeFile({
-          path: fileName,
-          data: base64WithoutPrefix,
-          directory: Directory.Documents,
-          // 이미지 파일은 encoding 생략 (자동으로 base64로 처리됨)
-        });
-        
-        console.log('파일 저장 성공:', result.uri);
-        let fileUrl = result.uri;
-        try {
-          const uri = await Filesystem.getUri({ directory: Directory.Documents, path: fileName });
-          if (uri?.uri) fileUrl = uri.uri;
-        } catch {}
-        
-        // iOS에서는 Documents에만 저장하면 사용자가 접근하기 어려우므로 공유 시트 표시
-        try {
-          const platform = Capacitor.getPlatform();
-          if (platform === 'ios') {
-            await Share.share({
-              title: '교회 암송 말씀',
-              url: fileUrl
-            });
-          }
-        } catch (shareErr) {
-          console.warn('공유 시트 표시 실패(무시 가능):', shareErr);
-        }
-        
-        // 저장 성공을 사용자에게 알림
-        if (navigator.vibrate) {
-          navigator.vibrate(200); // 성공 진동
-        }
-        
+        await Filesystem.writeFile({ path: fileName, data: base64WithoutPrefix, directory: Directory.Documents });
+        if (navigator.vibrate) navigator.vibrate(200);
         return;
-        
       } catch (nativeError) {
         console.error('네이티브 파일 저장 실패:', nativeError);
         

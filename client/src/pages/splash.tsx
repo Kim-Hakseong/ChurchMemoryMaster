@@ -19,25 +19,11 @@ export default function SplashPage() {
         for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
         const base64String = btoa(binary);
         const fileName = `교육목표_${new Date().toISOString().slice(0,10)}.jpg`;
-        let savedUri = '';
+        // iOS: 갤러리에 보이도록 공유 시트로 직접 저장 유도
         try {
-          const write = await Filesystem.writeFile({ path: fileName, data: base64String, directory: Directory.Documents });
-          savedUri = write?.uri || '';
+          await Share.share({ title: '교육목표 이미지', url: `data:image/jpeg;base64,${base64String}` });
         } catch {}
-        if (!savedUri) {
-          try {
-            const uri = await Filesystem.getUri({ directory: Directory.Documents, path: fileName });
-            savedUri = uri?.uri || '';
-          } catch {}
-        }
-        // iOS 사용성 개선: 공유 시트로 사진 앱/파일 앱 저장 유도
-        try {
-          await Share.share({
-            title: '교육목표 이미지',
-            url: savedUri || `data:image/jpeg;base64,${base64String}`
-          });
-        } catch {}
-        alert('이미지가 저장 또는 공유되었습니다.');
+        alert('공유 시트에서 "사진에 저장"을 선택해 주세요.');
         return;
       } else {
         // 웹 다운로드
