@@ -58,15 +58,19 @@ function App() {
         LocalStorage.clearAll();
         
         // 1) 첫 설치 시 이벤트가 비어있다면 시드 → 과거 일정 정리 → 영구 저장
-        const alreadySeeded = localStorage.getItem('cm_events_seeded') === '1';
+        // seed 버전이 바뀌면 강제 재시드 (엑셀 변경 반영)
+        const storedSeedVersion = localStorage.getItem('cm_seed_version');
         const existingEvents = await LocalStorage.getEvents();
-        const needsSeed = !alreadySeeded && (!existingEvents || existingEvents.length === 0);
+        let needsSeed = (!existingEvents || existingEvents.length === 0);
 
         if (needsSeed) {
           try {
             const seedResp = await fetch('/seed.json', { headers: { 'Cache-Control': 'no-cache' } });
             if (seedResp.ok) {
               const seed = await seedResp.json();
+              if (seed.seedVersion && seed.seedVersion !== storedSeedVersion) {
+                needsSeed = true;
+              }
               if (Array.isArray(seed.verses) && seed.verses.length > 0) {
                 LocalStorage.saveVerses(seed.verses);
               }
@@ -77,6 +81,9 @@ function App() {
                 await LocalStorage.saveEvents(seed.events);
               }
               console.log(`✅ seed.json 적용 완료: v=${seed.verses?.length ?? 0}, m=${seed.monthlyVerses?.length ?? 0}, e=${seed.events?.length ?? 0}`);
+              if (seed.seedVersion) {
+                localStorage.setItem('cm_seed_version', seed.seedVersion);
+              }
             }
           } catch (e) {
             console.log('⚠️ seed.json 없음 또는 로드 실패, 엑셀 로드로 폴백');

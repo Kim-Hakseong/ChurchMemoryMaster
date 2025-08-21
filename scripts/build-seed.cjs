@@ -88,7 +88,14 @@ function parseCalendarWorkbook(wb) {
     if (!title) continue;
     events.push({ id: autoId++, date, title, description, ageGroup: null, startDate: start_date || null, endDate: end_date || null });
   }
-  return events;
+  // 현재 날짜 기준으로 과거 이벤트 제거
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const filtered = events.filter((ev) => {
+    const check = (ev.endDate && ev.endDate.trim()) ? ev.endDate : ev.date;
+    return check >= todayStr;
+  });
+  return filtered;
 }
 
 function ensureDir(dir) {
@@ -110,10 +117,12 @@ function main() {
   const { verses, monthlyVerses } = parseVersesWorkbook(versesWb);
   const events = parseCalendarWorkbook(calendarWb);
 
-  const seed = { verses, monthlyVerses, events };
+  const seedVersion = new Date().toISOString();
+  const seed = { seedVersion, verses, monthlyVerses, events };
   const outPath = path.join(publicDir, 'seed.json');
   fs.writeFileSync(outPath, JSON.stringify(seed, null, 2), 'utf-8');
   console.log(`✅ seed.json 생성 완료: ${outPath}`);
+  console.log(`  - seedVersion: ${seedVersion}`);
   console.log(`  - verses: ${verses.length}, monthlyVerses: ${monthlyVerses.length}, events: ${events.length}`);
 }
 
