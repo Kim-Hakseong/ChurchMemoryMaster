@@ -71,16 +71,11 @@ function App() {
               if (seed.seedVersion && seed.seedVersion !== storedSeedVersion) {
                 needsSeed = true;
               }
-              if (Array.isArray(seed.verses) && seed.verses.length > 0) {
-                LocalStorage.saveVerses(seed.verses);
-              }
-              if (Array.isArray(seed.monthlyVerses) && seed.monthlyVerses.length > 0) {
-                LocalStorage.saveMonthlyVerses(seed.monthlyVerses);
-              }
+              // 과거와 동일하게: 시드는 "이벤트"만 반영, 구절/월암송은 엑셀로만 로드
               if (Array.isArray(seed.events) && seed.events.length > 0) {
                 await LocalStorage.saveEvents(seed.events);
+                console.log(`✅ seed.json 이벤트 적용: e=${seed.events.length}`);
               }
-              console.log(`✅ seed.json 적용 완료: v=${seed.verses?.length ?? 0}, m=${seed.monthlyVerses?.length ?? 0}, e=${seed.events?.length ?? 0}`);
               if (seed.seedVersion) {
                 localStorage.setItem('cm_seed_version', seed.seedVersion);
               }

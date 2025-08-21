@@ -165,42 +165,46 @@ export class LocalStorage {
     console.log('🔄 폴백 메커니즘: 기본 데이터 로드 시작...');
     
     try {
-      // 기본 암송구절 데이터
-      const fallbackVerses: Verse[] = [
-        {
-          id: 1,
-          date: '2025-01-20',
-          reference: '요한복음 3:16',
-          content: '하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라',
-          ageGroup: 'elementary'
-        },
-        {
-          id: 2,
-          date: '2025-01-27',
-          reference: '시편 119:105',
-          content: '주의 말씀은 내 발에 등이요 내 길에 빛이니이다',
-          ageGroup: 'elementary'
-        }
-      ];
-
-      // 기본 이벤트 데이터 (현재 주/월 기준으로 동적 생성)
-      const today = new Date();
+      // 기본 암송구절 데이터 (현재 주차 기준으로 3부서 x 지난/이번/다음 주)
       const pad = (n: number) => String(n).padStart(2, '0');
       const toDateStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      const today = new Date();
       const thisSunday = new Date(today);
       thisSunday.setDate(today.getDate() - today.getDay());
       thisSunday.setHours(0,0,0,0);
+      const lastSunday = new Date(thisSunday);
+      lastSunday.setDate(thisSunday.getDate() - 7);
       const nextSunday = new Date(thisSunday);
-      nextSunday.setDate(thisSunday.getDate()+7);
-      const threeDayStart = new Date(today);
-      threeDayStart.setDate(today.getDate()+2);
+      nextSunday.setDate(thisSunday.getDate() + 7);
+
+      const verseTriplet = (ageGroup: 'kindergarten'|'elementary'|'youth', baseId: number) => ([
+        { id: baseId + 0, date: toDateStr(lastSunday), reference: '시편 23:1', content: '여호와는 나의 목자시니 내게 부족함이 없으리로다', ageGroup },
+        { id: baseId + 1, date: toDateStr(thisSunday), reference: '요한복음 3:16', content: '하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라', ageGroup },
+        { id: baseId + 2, date: toDateStr(nextSunday), reference: '잠언 3:5', content: '너는 마음을 다하여 여호와를 신뢰하고 네 명철을 의지하지 말라', ageGroup },
+      ] as Verse[]);
+
+      const fallbackVerses: Verse[] = [
+        ...verseTriplet('kindergarten', 1),
+        ...verseTriplet('elementary', 101),
+        ...verseTriplet('youth', 201),
+      ];
+
+      // 기본 이벤트 데이터 (현재 주/월 기준으로 동적 생성)
+      const today2 = new Date();
+      const thisSunday2 = new Date(today2);
+      thisSunday2.setDate(today2.getDate() - today2.getDay());
+      thisSunday2.setHours(0,0,0,0);
+      const nextSunday2 = new Date(thisSunday2);
+      nextSunday2.setDate(thisSunday2.getDate()+7);
+      const threeDayStart = new Date(today2);
+      threeDayStart.setDate(today2.getDate()+2);
       const threeDayEnd = new Date(threeDayStart);
       threeDayEnd.setDate(threeDayStart.getDate()+2);
 
       const fallbackEvents: Event[] = [
         {
           id: 1,
-          date: toDateStr(thisSunday),
+          date: toDateStr(thisSunday2),
           title: '주일학교 예배',
           description: '주일학교 정기 예배',
           ageGroup: null,
