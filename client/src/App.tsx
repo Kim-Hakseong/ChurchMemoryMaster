@@ -173,6 +173,15 @@ function App() {
           }
         } catch {}
 
+        // 최종 보증: 이벤트가 여전히 0개면 폴백 생성 후 저장
+        try {
+          const afterSeedEvents = await LocalStorage.getEvents();
+          if (!afterSeedEvents || afterSeedEvents.length === 0) {
+            console.log('⚠️ 이벤트 0개 감지 → 폴백 데이터 주입');
+            LocalStorage.loadFallbackData();
+          }
+        } catch {}
+
         // UI 업데이트
         setDataLoaded(true);
         queryClient.invalidateQueries();
