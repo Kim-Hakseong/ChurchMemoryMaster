@@ -57,24 +57,30 @@ function App() {
         // 기존 구절 데이터만 클리어 (이벤트는 보존)
         LocalStorage.clearAll();
         
-        // 1) seed.json 우선 적용 (빌드 시 생성됨)
-        try {
-          const seedResp = await fetch('/seed.json', { headers: { 'Cache-Control': 'no-cache' } });
-          if (seedResp.ok) {
-            const seed = await seedResp.json();
-            if (Array.isArray(seed.verses) && seed.verses.length > 0) {
-              LocalStorage.saveVerses(seed.verses);
+        // 1) 첫 설치 시 이벤트가 비어있다면 시드 → 과거 일정 정리 → 영구 저장
+        const alreadySeeded = localStorage.getItem('cm_events_seeded') === '1';
+        const existingEvents = await LocalStorage.getEvents();
+        const needsSeed = !alreadySeeded && (!existingEvents || existingEvents.length === 0);
+
+        if (needsSeed) {
+          try {
+            const seedResp = await fetch('/seed.json', { headers: { 'Cache-Control': 'no-cache' } });
+            if (seedResp.ok) {
+              const seed = await seedResp.json();
+              if (Array.isArray(seed.verses) && seed.verses.length > 0) {
+                LocalStorage.saveVerses(seed.verses);
+              }
+              if (Array.isArray(seed.monthlyVerses) && seed.monthlyVerses.length > 0) {
+                LocalStorage.saveMonthlyVerses(seed.monthlyVerses);
+              }
+              if (Array.isArray(seed.events) && seed.events.length > 0) {
+                await LocalStorage.saveEvents(seed.events);
+              }
+              console.log(`✅ seed.json 적용 완료: v=${seed.verses?.length ?? 0}, m=${seed.monthlyVerses?.length ?? 0}, e=${seed.events?.length ?? 0}`);
             }
-            if (Array.isArray(seed.monthlyVerses) && seed.monthlyVerses.length > 0) {
-              LocalStorage.saveMonthlyVerses(seed.monthlyVerses);
-            }
-            if (Array.isArray(seed.events) && seed.events.length > 0) {
-              await LocalStorage.saveEvents(seed.events);
-            }
-            console.log(`✅ seed.json 적용 완료: v=${seed.verses?.length ?? 0}, m=${seed.monthlyVerses?.length ?? 0}, e=${seed.events?.length ?? 0}`);
+          } catch (e) {
+            console.log('⚠️ seed.json 없음 또는 로드 실패, 엑셀 로드로 폴백');
           }
-        } catch (e) {
-          console.log('⚠️ seed.json 없음 또는 로드 실패, 엑셀 로드로 폴백');
         }
 
         // 2) 엑셀 파일 폴백 로드 (iOS WebView에서도 접근 가능한 상대 경로)
@@ -103,24 +109,26 @@ function App() {
             throw new Error(`암송 말씀 파일 로드 실패: ${response.status}`);
           }
 
-          // 캘린더 이벤트 파일 로드 (선택사항)
-          try {
-            const calendarResponse = await fetch(calendarUrl, {
-              method: 'GET',
-              headers: { 'Cache-Control': 'no-cache' },
-            });
-            
-            if (calendarResponse.ok) {
-              const calendarBlob = await calendarResponse.blob();
-              const calendarFile = new File([calendarBlob], 'calendar_events.xlsx', { 
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+          // 캘린더 이벤트 파일 로드 (첫 설치 시에만)
+          if (needsSeed) {
+            try {
+              const calendarResponse = await fetch(calendarUrl, {
+                method: 'GET',
+                headers: { 'Cache-Control': 'no-cache' },
               });
               
-              const calendarEvents = await ExcelParser.parseCalendarFile(calendarFile);
-              console.log(`✅ 캘린더 이벤트 로드 완료: ${calendarEvents.length}개`);
+              if (calendarResponse.ok) {
+                const calendarBlob = await calendarResponse.blob();
+                const calendarFile = new File([calendarBlob], 'calendar_events.xlsx', { 
+                  type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                });
+                
+                const calendarEvents = await ExcelParser.parseCalendarFile(calendarFile);
+                console.log(`✅ 캘린더 이벤트 로드 완료: ${calendarEvents.length}개`);
+              }
+            } catch (calendarError) {
+              console.log('⚠️ 캘린더 이벤트 파일 로드 실패 (선택사항)');
             }
-          } catch (calendarError) {
-            console.log('⚠️ 캘린더 이벤트 파일 로드 실패 (선택사항)');
           }
           
         } catch (fetchError) {
@@ -148,12 +156,24 @@ function App() {
           }
         } catch {}
 
+        // 1회성: 시드 직후 과거 일정 정리 및 완료 플래그 저장
+        try {
+          if (needsSeed) {
+            // 과거 일정 정리
+            scheduleEventCleaning();
+            // 즉시 한 번 실행은 scheduleEventCleaning 내부에서 처리됨
+            localStorage.setItem('cm_events_seeded', '1');
+          }
+        } catch {}
+
         // UI 업데이트
         setDataLoaded(true);
         queryClient.invalidateQueries();
         
-        // 지난 일정 자동 삭제 스케줄러 시작
-        scheduleEventCleaning();
+        // 지난 일정 자동 삭제 스케줄러 시작(상시)
+        if (!needsSeed) {
+          scheduleEventCleaning();
+        }
 
         // 알림 스케줄 재등록 (앱 시작/재시작 시)
         await rescheduleFromLocalStorage();
