@@ -12,14 +12,28 @@ export default function SplashPage() {
       const resp = await fetch(url, { cache: 'no-cache' });
       const blob = await resp.blob();
       if (isNative) {
-        // 네이티브 저장
+        // 네이티브 저장: iOS는 갤러리 직접 저장 시도(미설치 시 공유 시트)
         const arrayBuffer = await blob.arrayBuffer();
         const bytes = new Uint8Array(arrayBuffer);
         let binary = '';
         for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
         const base64String = btoa(binary);
-        const fileName = `교육목표_${new Date().toISOString().slice(0,10)}.jpg`;
-        // iOS: Cache에 파일 저장 후 Share에 파일 URL 전달
+        const platform = Capacitor.getPlatform();
+        if (platform === 'ios') {
+          try {
+            const media: any = await import('@capacitor-community/media');
+            if (media && media.Media && typeof media.Media.savePhoto === 'function') {
+              try {
+                await media.Media.savePhoto({ data: base64String, album: 'ChurchMemory' });
+              } catch {
+                await media.Media.savePhoto({ base64: base64String, album: 'ChurchMemory' });
+              }
+              alert('사진 앱에 저장되었습니다.');
+              return;
+            }
+          } catch {}
+        }
+        // 폴백: Cache에 파일 저장 후 공유 시트
         const tempName = `splash_${Date.now()}.jpg`;
         await Filesystem.writeFile({ path: tempName, data: base64String, directory: Directory.Cache });
         const uri = await Filesystem.getUri({ directory: Directory.Cache, path: tempName });

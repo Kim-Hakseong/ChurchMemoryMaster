@@ -201,13 +201,7 @@ export async function downloadCSVTemplate(): Promise<string> {
 
 export async function exportEventsToCSV(): Promise<string> {
   const events = await LocalStorage.getEvents();
-  // iOS는 CSV 사용성이 낮아 ICS로 내보내기
-  if (Capacitor.getPlatform() === 'ios') {
-    // iOS에서도 수정 편의성을 위해 CSV 유지 + 공유 시트로 내보내기
-    const csv = eventsToCSV(events);
-    const fileName = `교회학교_캘린더_${new Date().toISOString().slice(0,10)}.csv`;
-    return await writeTextFilePreferDownloads(fileName, csv);
-  }
+  // iOS: CSV 외에 ICS도 병행 생성하여 캘린더 앱으로 직접 연동 가능하게 함
   const csv = eventsToCSV(events);
   const fileName = `교회학교_캘린더_${new Date().toISOString().slice(0,10)}.csv`;
   return await writeTextFilePreferDownloads(fileName, csv);

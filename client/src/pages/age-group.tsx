@@ -143,34 +143,37 @@ export default function AgeGroup() {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 sm:px-6 mt-24">
+      <main className="flex-1 px-3 py-3 sm:px-5 mt-24">
         <div>
           {isLoading ? (
-            <div className="grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="verse-card animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded mb-3"></div>
-                  <div className="h-20 bg-gray-200 rounded mb-3"></div>
+                <div key={i} className="verse-card animate-pulse p-3">
+                  <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-16 bg-gray-200 rounded mb-2"></div>
                   <div className="h-4 bg-gray-200 rounded"></div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               <VerseCard
                 verse={weeklyVerses?.lastWeek || null}
                 weekType="last"
                 onShare={handleShare}
+                compact
               />
               <VerseCard
                 verse={weeklyVerses?.thisWeek || null}
                 weekType="current"
                 onShare={handleShare}
+                compact
               />
               <VerseCard
                 verse={weeklyVerses?.nextWeek || null}
                 weekType="next"
                 onShare={handleShare}
+                compact
               />
             </div>
           )}

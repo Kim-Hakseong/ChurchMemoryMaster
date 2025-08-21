@@ -40,7 +40,7 @@ function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  // 앱 시작시 public 폴더의 엑셀 파일 자동 로드
+  // 앱 시작시 seed.json 우선 로드(실패 시 기존 엑셀/폴백 순)
   useEffect(() => {
     const loadExcelData = async () => {
       try {
@@ -57,8 +57,27 @@ function App() {
         // 기존 구절 데이터만 클리어 (이벤트는 보존)
         LocalStorage.clearAll();
         
-        // 엑셀 파일 로드
-        // iOS WebView에서도 접근 가능한 상대 경로 사용
+        // 1) seed.json 우선 적용 (빌드 시 생성됨)
+        try {
+          const seedResp = await fetch('/seed.json', { headers: { 'Cache-Control': 'no-cache' } });
+          if (seedResp.ok) {
+            const seed = await seedResp.json();
+            if (Array.isArray(seed.verses) && seed.verses.length > 0) {
+              LocalStorage.saveVerses(seed.verses);
+            }
+            if (Array.isArray(seed.monthlyVerses) && seed.monthlyVerses.length > 0) {
+              LocalStorage.saveMonthlyVerses(seed.monthlyVerses);
+            }
+            if (Array.isArray(seed.events) && seed.events.length > 0) {
+              await LocalStorage.saveEvents(seed.events);
+            }
+            console.log(`✅ seed.json 적용 완료: v=${seed.verses?.length ?? 0}, m=${seed.monthlyVerses?.length ?? 0}, e=${seed.events?.length ?? 0}`);
+          }
+        } catch (e) {
+          console.log('⚠️ seed.json 없음 또는 로드 실패, 엑셀 로드로 폴백');
+        }
+
+        // 2) 엑셀 파일 폴백 로드 (iOS WebView에서도 접근 가능한 상대 경로)
         const excelUrl = `/church_verses.xlsx`;
         const calendarUrl = `/calendar_events.xlsx`;
         
@@ -108,7 +127,7 @@ function App() {
           console.error('❌ 엑셀 파일 로드 실패:', fetchError);
           console.log('🔄 기본 데이터로 실행...');
           
-          // 폴백 데이터 로드
+          // 3) 최종 폴백 데이터 로드
           LocalStorage.loadFallbackData();
           setDataLoaded(true);
           queryClient.invalidateQueries();

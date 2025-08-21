@@ -62,9 +62,27 @@ export const captureScreen = async (): Promise<void> => {
       try {
         const platform = Capacitor.getPlatform();
         if (platform === 'ios') {
-          // iOS: Cache에 파일로 저장 후 Share에 file URL 전달 → '사진에 저장' 노출됨
-          const fileName = `capture_${Date.now()}.png`;
+          // iOS: 1) Media 플러그인으로 갤러리에 직접 저장 시도 → 2) 실패 시 Share 시트 폴백
           const base64WithoutPrefix = base64Data.replace(/^data:image\/png;base64,/, '');
+          try {
+            const media: any = await import('@capacitor-community/media');
+            if (media && media.Media && typeof media.Media.savePhoto === 'function') {
+              // 다양한 시그니처 대비
+              try {
+                await media.Media.savePhoto({ data: base64WithoutPrefix, album: 'ChurchMemory' });
+              } catch {
+                await media.Media.savePhoto({ base64: base64WithoutPrefix, album: 'ChurchMemory' });
+              }
+              console.log('📸 iOS 갤러리에 저장 완료(Media)');
+              if (navigator.vibrate) navigator.vibrate(200);
+              return;
+            }
+          } catch (e) {
+            console.log('Media 플러그인 불가/미설치, Share 시트로 폴백:', e);
+          }
+
+          // 폴백: Cache에 저장 후 Share로 "사진에 저장" 유도
+          const fileName = `capture_${Date.now()}.png`;
           await Filesystem.writeFile({ path: fileName, data: base64WithoutPrefix, directory: Directory.Cache });
           const uri = await Filesystem.getUri({ directory: Directory.Cache, path: fileName });
           await Share.share({ title: '교회 암송 말씀', url: uri.uri });

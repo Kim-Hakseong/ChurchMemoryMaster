@@ -1,0 +1,74 @@
+{
+  "images": [
+    {
+      "size": "20x20",
+      "idiom": "iphone",
+      "scale": "2x",
+      "filename": "appicon-20x20@2x.png"
+    },
+    {
+      "size": "20x20",
+      "idiom": "iphone",
+      "scale": "3x",
+      "filename": "appicon-20x20@3x.png"
+    },
+    {
+      "size": "29x29",
+      "idiom": "iphone",
+      "scale": "2x",
+      "filename": "appicon-29x29@2x.png"
+    },
+    {
+      "size": "29x29",
+      "idiom": "iphone",
+      "scale": "3x",
+      "filename": "appicon-29x29@3x.png"
+    },
+    {
+      "size": "40x40",
+      "idiom": "iphone",
+      "scale": "2x",
+      "filename": "appicon-40x40@2x.png"
+    },
+    {
+      "size": "40x40",
+      "idiom": "iphone",
+      "scale": "3x",
+      "filename": "appicon-40x40@3x.png"
+    },
+    {
+      "size": "60x60",
+      "idiom": "iphone",
+      "scale": "2x",
+      "filename": "appicon-60x60@2x.png"
+    },
+    {
+      "size": "60x60",
+      "idiom": "iphone",
+      "scale": "3x",
+      "filename": "appicon-60x60@3x.png"
+    },
+    {
+      "size": "76x76",
+      "idiom": "iphone",
+      "scale": "2x",
+      "filename": "appicon-76x76@2x.png"
+    },
+    {
+      "size": "83.5x83.5",
+      "idiom": "iphone",
+      "scale": "2x",
+      "filename": "appicon-83.5x83.5@2x.png"
+    },
+    {
+      "size": "1024x1024",
+      "idiom": "ios-marketing",
+      "scale": "1x",
+      "filename": "appicon-1024.png"
+    }
+  ],
+  "info": {
+    "version": 1,
+    "author": "xcode"
+  }
+}

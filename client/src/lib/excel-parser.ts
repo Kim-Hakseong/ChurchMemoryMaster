@@ -352,7 +352,13 @@ export class ExcelParser {
           const data = e.target?.result;
           if (!data) throw new Error('파일을 읽을 수 없습니다.');
 
-          const workbook = XLSX.read(data, { type: 'binary' });
+          // iOS WebView 호환: ArrayBuffer 우선 사용
+          let workbook: XLSX.WorkBook;
+          if (data instanceof ArrayBuffer) {
+            workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+          } else {
+            workbook = XLSX.read(data as string, { type: 'binary' });
+          }
           const calendarEvents = this.parseCalendarWorkbook(workbook);
 
           // 파일에서 최신 이벤트 로드 후 병합 (+전역 중복 제거)
@@ -392,7 +398,8 @@ export class ExcelParser {
       };
 
       reader.onerror = () => reject(new Error('파일 읽기 오류가 발생했습니다.'));
-      reader.readAsBinaryString(file);
+      // iOS 호환을 위해 ArrayBuffer로 읽기
+      reader.readAsArrayBuffer(file);
     });
   }
 

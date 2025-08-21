@@ -35,6 +35,12 @@ jobs:
           fi
           npx cap sync ios
 
+      - name: Inject iOS Info.plist permissions
+        run: |
+          PLIST="ios/App/App/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Add :NSPhotoLibraryAddUsageDescription string "사진을 저장하기 위해 접근 권한이 필요합니다."' "$PLIST" || /usr/libexec/PlistBuddy -c 'Set :NSPhotoLibraryAddUsageDescription "사진을 저장하기 위해 접근 권한이 필요합니다."' "$PLIST"
+          /usr/libexec/PlistBuddy -c 'Add :NSPhotoLibraryUsageDescription string "사진에 접근하기 위해 권한이 필요합니다."' "$PLIST" || /usr/libexec/PlistBuddy -c 'Set :NSPhotoLibraryUsageDescription "사진에 접근하기 위해 권한이 필요합니다."' "$PLIST"
+
       - name: Generate iOS App Icons from attached_assets/logo.png
         run: node scripts/generate-ios-icons.cjs
 

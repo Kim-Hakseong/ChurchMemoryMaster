@@ -106,3 +106,11 @@
     @apply hover:bg-gray-100 text-gray-400;
   }
 }
+
+/* Utility: 2-line clamp without plugin */
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

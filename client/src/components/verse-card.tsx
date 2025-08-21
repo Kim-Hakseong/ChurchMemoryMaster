@@ -10,6 +10,7 @@ interface VerseCardProps {
   verse: Verse | null;
   weekType: "last" | "current" | "next";
   onShare?: (verse?: Verse) => void;
+  compact?: boolean;
 }
 
 const weekTypeConfig = {
@@ -42,7 +43,7 @@ const weekTypeConfig = {
   },
 };
 
-export default function VerseCard({ verse, weekType, onShare }: VerseCardProps) {
+export default function VerseCard({ verse, weekType, onShare, compact = false }: VerseCardProps) {
   const { toast } = useToast();
   const config = weekTypeConfig[weekType];
 
@@ -65,10 +66,30 @@ export default function VerseCard({ verse, weekType, onShare }: VerseCardProps) 
     }
   };
 
+  const wrapperClass = compact
+    ? `${config.bgClass} p-3`
+    : config.bgClass;
+
+  const titleClass = compact
+    ? `${config.titleClass} text-base`
+    : config.titleClass;
+
+  const lessonClass = (weekType === 'current')
+    ? (compact ? 'text-base text-gray-900 font-semibold' : 'text-lg text-gray-900 font-semibold')
+    : (compact ? 'text-sm text-gray-700 font-semibold' : 'text-base text-gray-700 font-semibold');
+
+  const contentClass = (weekType === 'current')
+    ? (compact ? 'text-sm text-gray-800 font-medium' : 'text-base text-gray-800 font-medium')
+    : (compact ? 'text-xs text-gray-600' : 'text-sm text-gray-600');
+
+  const citeClass = (weekType === 'current')
+    ? (compact ? 'text-xs text-primary font-semibold' : 'text-sm text-primary font-semibold')
+    : (compact ? 'text-[11px] text-gray-500 font-medium' : 'text-xs text-gray-500 font-medium');
+
   return (
-    <motion.div className={config.bgClass}>
-      <div className="flex justify-between items-start mb-3">
-        <h3 className={config.titleClass}>
+    <motion.div className={wrapperClass}>
+      <div className={compact ? "flex justify-between items-start mb-2" : "flex justify-between items-start mb-3"}>
+        <h3 className={titleClass}>
           {config.title}
         </h3>
       </div>
@@ -77,40 +98,34 @@ export default function VerseCard({ verse, weekType, onShare }: VerseCardProps) 
                     <>
                       {/* 공과명 표시 (있는 경우) */}
                       {verse.lessonName && (
-                        <h3 className={`font-semibold mb-2 ${
-                          weekType === 'current' ? 'text-lg text-gray-900' : 'text-base text-gray-700'
-                        }`}>
+                        <h3 className={`font-semibold ${compact ? 'mb-1' : 'mb-2'} ${lessonClass}`}>
                           {verse.lessonName}
                         </h3>
                       )}
                       
-                      <blockquote className={`leading-relaxed mb-3 ${
-                        weekType === 'current' ? 'text-base text-gray-800 font-medium' : 'text-sm text-gray-600'
-                      }`}>
+                      <blockquote className={`leading-relaxed ${compact ? 'mb-2' : 'mb-3'} ${contentClass}`}>
                         "{verse.content}"
                       </blockquote>
 
                       {/* 장절과 복사 버튼을 같은 라인에 배치 */}
                       <div className="flex items-center justify-between">
-                      <cite className={`${
-                        weekType === 'current' ? 'text-sm text-primary font-semibold' : 'text-xs text-gray-500 font-medium'
-                      }`}>
+                      <cite className={citeClass}>
                         {verse.reference}
                       </cite>
                           <Button
                 variant="ghost"
-                size="sm"
+                size={compact ? "icon" : "sm"}
                 onClick={handleCopyVerse}
-                className="h-6 w-6 p-0 hover:bg-primary/10"
+                className={compact ? "h-6 w-6 p-0 hover:bg-primary/10" : "h-6 w-6 p-0 hover:bg-primary/10"}
               >
               <Copy className="w-3 h-3 text-primary" />
               </Button>
             </div>
         </>
       ) : (
-        <div className="text-center py-8">
-          <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-          <p className="text-sm text-gray-500">
+        <div className={compact ? "text-center py-6" : "text-center py-8"}>
+          <Calendar className={compact ? "w-6 h-6 mx-auto mb-1 text-gray-400" : "w-8 h-8 mx-auto mb-2 text-gray-400"} />
+          <p className={compact ? "text-xs text-gray-500" : "text-sm text-gray-500"}>
             {weekType === "current" ? "이번 주 암송구절이 없습니다" :
              weekType === "last" ? "지난 주 암송구절이 없습니다" :
              "다음 주 암송구절이 없습니다"}
