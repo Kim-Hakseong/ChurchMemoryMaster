@@ -257,31 +257,145 @@ export class LocalStorage {
     try {
       const pad = (n: number) => String(n).padStart(2, '0');
       const toDateStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-      const today = new Date();
-      const thisSunday = new Date(today);
-      thisSunday.setDate(today.getDate() - today.getDay());
-      thisSunday.setHours(0,0,0,0);
-      const nextSunday = new Date(thisSunday);
-      nextSunday.setDate(thisSunday.getDate()+7);
+      // 날짜 유틸
+      const fromYMD = (y: number, m: number, d: number) => toDateStr(new Date(y, m - 1, d));
 
+      // 최초 설치 시 표시될 기본 일정
       const fallbackEvents: Event[] = [
         {
           id: 1,
-          date: toDateStr(thisSunday),
-          title: '주일학교 예배',
-          description: '주일학교 정기 예배',
+          date: fromYMD(2025, 8, 15),
+          title: '7차 하계수양회',
+          description: '장소: 갈릴리수양관',
           ageGroup: null,
-          startDate: null,
-          endDate: null
+          startDate: fromYMD(2025, 8, 15),
+          endDate: fromYMD(2025, 8, 19)
         },
         {
           id: 2,
-          date: toDateStr(nextSunday),
-          title: '부서 모임',
-          description: '정기 모임',
+          date: fromYMD(2025, 8, 19),
+          title: '여름 사무엘학교',
+          description: '장소: 갈릴리수양관',
           ageGroup: null,
-          startDate: null,
-          endDate: null
+          startDate: fromYMD(2025, 8, 19),
+          endDate: fromYMD(2025, 8, 24)
+        },
+        {
+          id: 3,
+          date: fromYMD(2025, 9, 13),
+          title: '교사교육',
+          description: '장소: 청주남부교회',
+          ageGroup: null,
+          startDate: fromYMD(2025, 9, 13),
+          endDate: fromYMD(2025, 9, 13)
+        },
+        {
+          id: 4,
+          date: fromYMD(2025, 9, 14),
+          title: '학부모교육',
+          description: '장소: 청주남부교회',
+          ageGroup: null,
+          startDate: fromYMD(2025, 9, 14),
+          endDate: fromYMD(2025, 9, 14)
+        },
+        {
+          id: 5,
+          date: fromYMD(2025, 9, 26),
+          title: '추계수양회',
+          description: '장소: 갈릴리수양관',
+          ageGroup: null,
+          startDate: fromYMD(2025, 9, 26),
+          endDate: fromYMD(2025, 9, 30)
+        },
+        {
+          id: 6,
+          date: fromYMD(2025, 9, 29),
+          title: '전도인수련회',
+          description: '장소: 갈릴리수양관',
+          ageGroup: null,
+          startDate: fromYMD(2025, 9, 29),
+          endDate: fromYMD(2025, 10, 2)
+        },
+        {
+          id: 7,
+          date: fromYMD(2025, 10, 20),
+          title: '고성 대전도집회 - 우병수P',
+          description: '장소: 고성교회',
+          ageGroup: null,
+          startDate: fromYMD(2025, 10, 20),
+          endDate: fromYMD(2025, 10, 26)
+        },
+        {
+          id: 8,
+          date: fromYMD(2025, 10, 25),
+          title: '전국 중고등부 부장단모임',
+          description: '장소: 갈릴리수양관',
+          ageGroup: null,
+          startDate: fromYMD(2025, 10, 25),
+          endDate: fromYMD(2025, 10, 25)
+        },
+        {
+          id: 9,
+          date: fromYMD(2025, 10, 27),
+          title: '대전도집회 - 최영조P',
+          description: '장소: 청주남부교회',
+          ageGroup: null,
+          startDate: fromYMD(2025, 10, 27),
+          endDate: fromYMD(2025, 11, 2)
+        },
+        {
+          id: 10,
+          date: fromYMD(2025, 10, 25),
+          title: '전국 청년임원수련회',
+          description: '장소: 갈릴리수양관',
+          ageGroup: null,
+          startDate: fromYMD(2025, 10, 25),
+          endDate: fromYMD(2025, 10, 25)
+        },
+        {
+          id: 11,
+          date: fromYMD(2025, 11, 9),
+          title: '달란트 시장',
+          description: '장소: 청주남부교회',
+          ageGroup: null,
+          startDate: fromYMD(2025, 11, 9),
+          endDate: fromYMD(2025, 11, 9)
+        },
+        {
+          id: 12,
+          date: fromYMD(2025, 11, 10),
+          title: '전도인수련회',
+          description: '장소: 갈릴리수양관',
+          ageGroup: null,
+          startDate: fromYMD(2025, 11, 10),
+          endDate: fromYMD(2025, 11, 13)
+        },
+        {
+          id: 13,
+          date: fromYMD(2025, 12, 14),
+          title: '교회학교 졸업식',
+          description: '장소: 청주남부교회',
+          ageGroup: null,
+          startDate: fromYMD(2025, 12, 14),
+          endDate: fromYMD(2025, 12, 14)
+        },
+        {
+          id: 14,
+          date: fromYMD(2025, 12, 24),
+          title: '성도 교제의 밤',
+          description: '장소: 청주남부교회',
+          ageGroup: null,
+          startDate: fromYMD(2025, 12, 24),
+          endDate: fromYMD(2025, 12, 24)
+        },
+        {
+          id: 15,
+          date: fromYMD(2025, 12, 31),
+          title: '2026 동계수련회',
+          description: '장소: 일반: 지역총괄교회\n청년: 갈릴리수양관',
+          ageGroup: null,
+          startDate: fromYMD(2025, 12, 31),
+          endDate: fromYMD(2026, 1, 3)
         }
       ];
 
