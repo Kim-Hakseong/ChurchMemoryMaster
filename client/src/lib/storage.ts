@@ -250,6 +250,48 @@ export class LocalStorage {
     }
   }
 
+  // 폴백(이벤트 전용): 엑셀/시드 실패 시 최소한의 일정만 복구
+  static loadFallbackEventsOnly(): void {
+    console.log('🔄 폴백(이벤트 전용) 시작...');
+
+    try {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const toDateStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      const today = new Date();
+      const thisSunday = new Date(today);
+      thisSunday.setDate(today.getDate() - today.getDay());
+      thisSunday.setHours(0,0,0,0);
+      const nextSunday = new Date(thisSunday);
+      nextSunday.setDate(thisSunday.getDate()+7);
+
+      const fallbackEvents: Event[] = [
+        {
+          id: 1,
+          date: toDateStr(thisSunday),
+          title: '주일학교 예배',
+          description: '주일학교 정기 예배',
+          ageGroup: null,
+          startDate: null,
+          endDate: null
+        },
+        {
+          id: 2,
+          date: toDateStr(nextSunday),
+          title: '부서 모임',
+          description: '정기 모임',
+          ageGroup: null,
+          startDate: null,
+          endDate: null
+        }
+      ];
+
+      void this.saveEvents(fallbackEvents);
+      console.log('✅ 폴백(이벤트 전용) 완료:', fallbackEvents.length, '개');
+    } catch (error) {
+      console.error('❌ 폴백(이벤트 전용) 실패:', error);
+    }
+  }
+
   static clearAll(): void {
     try {
       localStorage.removeItem(this.VERSES_KEY);

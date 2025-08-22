@@ -8,15 +8,22 @@ import { LocalStorage } from './storage';
  */
 function getCurrentBaseDate(): string {
   const now = new Date();
-  
-  // 현재 시간이 새벽 1시 이전이면 전날을 기준일로 사용
+
+  const formatLocalDate = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  // 현재 시간이 새벽 1시 이전이면 전날을 기준일로 사용 (로컬 기준)
   if (now.getHours() < 1) {
     const yesterday = new Date(now);
     yesterday.setDate(now.getDate() - 1);
-    return yesterday.toISOString().split('T')[0];
+    return formatLocalDate(yesterday);
   }
-  
-  return now.toISOString().split('T')[0];
+
+  return formatLocalDate(now);
 }
 
 /**

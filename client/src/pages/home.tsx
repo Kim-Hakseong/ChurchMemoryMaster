@@ -194,6 +194,7 @@ export default function Home() {
                       <Baby className="text-pink-600 w-3 h-3" />
                     </div>
                     <span className="text-sm text-gray-700">유치부</span>
+                    <span className="text-xs text-gray-600">1년, 1사이클</span>
                   </div>
                   <span className="text-sm text-green-600 font-medium">{Math.round(progressKindergarten * 100)}%</span>
                 </div>
@@ -209,6 +210,7 @@ export default function Home() {
                       <Users className="text-blue-600 w-3 h-3" />
                     </div>
                     <span className="text-sm text-gray-700">초등부</span>
+                    <span className="text-xs text-gray-600">2년, 1사이클</span>
                   </div>
                   <span className="text-sm text-green-600 font-medium">{Math.round(progressElementary * 100)}%</span>
                 </div>
@@ -224,6 +226,7 @@ export default function Home() {
                       <GraduationCap className="text-green-600 w-3 h-3" />
                     </div>
                     <span className="text-sm text-gray-700">중고등부</span>
+                    <span className="text-xs text-gray-600">3년, 1사이클</span>
                   </div>
                   <span className="text-sm text-green-600 font-medium">{Math.round(progressYouth * 100)}%</span>
                 </div>

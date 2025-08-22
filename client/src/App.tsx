@@ -137,8 +137,8 @@ function App() {
           console.error('❌ 엑셀 파일 로드 실패:', fetchError);
           console.log('🔄 기본 데이터로 실행...');
           
-          // 3) 최종 폴백 데이터 로드
-          LocalStorage.loadFallbackData();
+          // 3) 최종 폴백(이벤트 전용): 구절은 임의 생성 금지
+          LocalStorage.loadFallbackEventsOnly();
           setDataLoaded(true);
           queryClient.invalidateQueries();
           return;
@@ -172,8 +172,8 @@ function App() {
         try {
           const afterSeedEvents = await LocalStorage.getEvents();
           if (!afterSeedEvents || afterSeedEvents.length === 0) {
-            console.log('⚠️ 이벤트 0개 감지 → 폴백 데이터 주입');
-            LocalStorage.loadFallbackData();
+            console.log('⚠️ 이벤트 0개 감지 → 폴백(이벤트 전용) 주입');
+            LocalStorage.loadFallbackEventsOnly();
           }
         } catch {}
 
