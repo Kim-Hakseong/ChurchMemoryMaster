@@ -6,6 +6,15 @@ android/app/build/
 android/build/
 ios/build/
 ios/Pods/
+ios/App/Pods/
+ios/DerivedData/
+**/xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.moved-aside
+*.hmap
+*.dSYM
+*.dSYM.zip
 **/.gradle/
 **/.idea/
 .vscode/
