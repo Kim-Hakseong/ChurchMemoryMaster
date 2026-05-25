@@ -1,64 +1,182 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Inter:wght@200;300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* =====================================================================
+   v2 디자인 토큰 — Design2.md 섹션 2 / 7-2 매핑
+   ===================================================================== */
 :root {
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(20, 14.3%, 4.1%);
-  --muted: hsl(60, 4.8%, 95.9%);
-  --muted-foreground: hsl(25, 5.3%, 44.7%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(20, 14.3%, 4.1%);
-  --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(20, 14.3%, 4.1%);
-  --border: hsl(20, 5.9%, 90%);
-  --input: hsl(20, 5.9%, 90%);
-  --primary: hsl(251, 82%, 67%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(45, 93%, 47%);
-  --secondary-foreground: hsl(24, 9.8%, 10%);
-  --accent: hsl(166, 73%, 45%);
-  --accent-foreground: hsl(24, 9.8%, 10%);
+  /* --- v2 베이스 (Light) --- */
+  --page-bg: #FAFAF7;
+  --page-bg-warm: #F7F4EE;
+  --surface: #FFFFFF;
+  --surface-muted: #F5F2EC;
+  --ink: #0E0E0C;
+  --ink-soft: #3A3A36;
+  --ink-muted: #7A7873;
+  --ink-faint: #B5B2AA;
+  --border-soft: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.10);
+
+  /* --- 부서별 시그니처 (Light) --- */
+  --dept-kg-accent: #E07A4D;
+  --dept-kg-accent-soft: #FFE9DA;
+  --dept-kg-chip: #FCE2D1;
+  --dept-kg-chip-text: #A4593A;
+  --dept-kg-surface: #FBEFE5;
+
+  --dept-el-accent: #5A8C61;
+  --dept-el-accent-soft: #E5F1E2;
+  --dept-el-chip: #DDEED9;
+  --dept-el-chip-text: #3F6B47;
+  --dept-el-surface: #EEF6EB;
+
+  --dept-yt-accent: #6B61A8;
+  --dept-yt-accent-soft: #EDEAF7;
+  --dept-yt-chip: #E2DEF2;
+  --dept-yt-chip-text: #4F4877;
+  --dept-yt-surface: #EFEDF7;
+
+  /* --- 부서별 글로우 (Light) --- */
+  --glow-kindergarten: radial-gradient(circle at 30% 30%, rgba(252, 200, 165, 0.6), transparent 60%);
+  --glow-elementary: radial-gradient(circle at 30% 30%, rgba(186, 226, 192, 0.65), transparent 60%);
+  --glow-youth: radial-gradient(circle at 30% 30%, rgba(196, 188, 232, 0.6), transparent 60%);
+
+  /* --- Ambient glow (Light) --- */
+  --ambient-glow:
+    radial-gradient(ellipse 80% 50% at 80% 10%, rgba(255, 200, 160, 0.35), transparent 60%),
+    radial-gradient(ellipse 70% 40% at 10% 30%, rgba(200, 220, 255, 0.30), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 80%, rgba(220, 240, 215, 0.35), transparent 60%);
+
+  /* --- 그림자 (Light) --- */
+  --shadow-card-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card-md: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px -12px rgba(0, 0, 0, 0.10);
+  --shadow-glass: 0 1px 2px rgba(0, 0, 0, 0.06), 0 12px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-toggle: 0 8px 20px rgba(0, 0, 0, 0.08);
+
+  /* --- 브랜드 액센트 (활성 네비, 주요 CTA) --- */
+  --accent-brand: #0aaeae;
+  --accent-brand-foreground: #FFFFFF;
+
+  /* --- shadcn/ui 호환 매핑 (기존 컴포넌트 그대로 동작) --- */
+  --background: var(--page-bg);
+  --foreground: var(--ink);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--ink-muted);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --border: var(--border-soft);
+  --input: var(--border-soft);
+  /* primary는 부서별로 분기되므로 ink(검정)로 매핑 — Design2 12 FAQ */
+  --primary: var(--ink);
+  --primary-foreground: var(--surface);
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--ink);
+  --accent: var(--surface-muted);
+  --accent-foreground: var(--ink);
   --destructive: hsl(0, 84.2%, 60.2%);
   --destructive-foreground: hsl(60, 9.1%, 97.8%);
-  --ring: hsl(20, 14.3%, 4.1%);
-  --radius: 0.5rem;
-  --surface: hsl(210, 40%, 98%);
+  --ring: var(--ink);
+  --radius: 0.875rem; /* 14px — v2 medium */
 }
 
 .dark {
-  --background: hsl(240, 10%, 3.9%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(240, 3.7%, 15.9%);
-  --muted-foreground: hsl(240, 5%, 64.9%);
-  --popover: hsl(240, 10%, 3.9%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(240, 10%, 3.9%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 3.7%, 15.9%);
-  --input: hsl(240, 3.7%, 15.9%);
-  --primary: hsl(251, 82%, 67%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(240, 3.7%, 15.9%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(240, 3.7%, 15.9%);
-  --accent-foreground: hsl(0, 0%, 98%);
-  --destructive: hsl(0, 62.8%, 30.6%);
+  /* --- v2 베이스 (Dark) --- */
+  --page-bg: #0A0A0A;
+  --page-bg-warm: #111111;
+  --surface: #1A1A1A;
+  --surface-muted: #141414;
+  --ink: #FFFFFF;
+  --ink-soft: #D4D4D2;
+  --ink-muted: #8A8A85;
+  --ink-faint: #52524E;
+  --border-soft: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  /* --- 부서별 시그니처 (Dark) --- */
+  --dept-kg-accent: #FCA470;
+  --dept-kg-accent-soft: rgba(252, 160, 110, 0.12);
+  --dept-kg-chip: rgba(252, 200, 165, 0.16);
+  --dept-kg-chip-text: #FCC8A5;
+  --dept-kg-surface: #1F1814;
+
+  --dept-el-accent: #7ECB8D;
+  --dept-el-accent-soft: rgba(120, 200, 140, 0.12);
+  --dept-el-chip: rgba(150, 220, 165, 0.15);
+  --dept-el-chip-text: #9DD6A8;
+  --dept-el-surface: #141B16;
+
+  --dept-yt-accent: #9C8FE0;
+  --dept-yt-accent-soft: rgba(150, 138, 220, 0.12);
+  --dept-yt-chip: rgba(180, 170, 235, 0.16);
+  --dept-yt-chip-text: #B4AAEB;
+  --dept-yt-surface: #181624;
+
+  /* --- 부서별 글로우 (Dark) --- */
+  --glow-kindergarten: radial-gradient(circle at 30% 30%, rgba(252, 160, 110, 0.35), transparent 60%);
+  --glow-elementary: radial-gradient(circle at 30% 30%, rgba(120, 200, 140, 0.30), transparent 60%);
+  --glow-youth: radial-gradient(circle at 30% 30%, rgba(150, 138, 220, 0.30), transparent 60%);
+
+  /* --- Ambient glow (Dark) — 투명도 대폭 축소 --- */
+  --ambient-glow:
+    radial-gradient(ellipse 90% 50% at 80% 5%, rgba(255, 180, 130, 0.08), transparent 60%),
+    radial-gradient(ellipse 80% 50% at 5% 30%, rgba(140, 160, 230, 0.06), transparent 60%),
+    radial-gradient(ellipse 70% 40% at 50% 90%, rgba(160, 200, 170, 0.06), transparent 60%);
+
+  /* --- 그림자 (Dark) --- */
+  --shadow-card-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-card-md: 0 1px 2px rgba(0, 0, 0, 0.30), 0 12px 32px -12px rgba(0, 0, 0, 0.50);
+  --shadow-glass: 0 1px 2px rgba(0, 0, 0, 0.40), 0 12px 30px rgba(0, 0, 0, 0.50), 0 4px 12px rgba(0, 0, 0, 0.30);
+  --shadow-toggle: 0 8px 20px rgba(0, 0, 0, 0.40);
+
+  /* --- 브랜드 액센트 (다크 모드 — 약간 밝은 톤) --- */
+  --accent-brand: #14c5c5;
+  --accent-brand-foreground: #0A0A0A;
+
+  /* shadcn 호환 */
+  --background: var(--page-bg);
+  --foreground: var(--ink);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--ink-muted);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --border: var(--border-soft);
+  --input: var(--border-soft);
+  --primary: var(--ink);
+  --primary-foreground: var(--page-bg);
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--ink);
+  --accent: var(--surface-muted);
+  --accent-foreground: var(--ink);
+  --destructive: hsl(0, 62.8%, 45%);
   --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 4.9%, 83.9%);
-  --surface: hsl(240, 10%, 3.9%);
+  --ring: var(--ink);
 }
 
+/* =====================================================================
+   Base
+   ===================================================================== */
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--border);
+  }
+
+  html {
+    background: var(--page-bg);
   }
 
   body {
-    @apply font-korean antialiased bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 text-foreground min-h-screen;
+    @apply font-korean antialiased min-h-screen;
     font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--page-bg);
+    color: var(--ink);
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   .font-korean {
@@ -68,46 +186,258 @@
   .font-inter {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
-
-  .glassmorphism {
-    @apply bg-white/70 backdrop-blur-sm border border-gray-100;
-  }
-
-  .gradient-primary {
-    background: linear-gradient(135deg, hsl(251, 82%, 67%) 0%, hsl(166, 73%, 45%) 100%);
-  }
-
-  .gradient-secondary {
-    background: linear-gradient(135deg, hsl(45, 93%, 47%) 0%, hsl(34, 93%, 54%) 100%);
-  }
 }
 
+/* =====================================================================
+   v2 컴포넌트 유틸리티
+   ===================================================================== */
 @layer components {
+  /* --- v2 핵심 카드 표면 --- */
+  .surface-card {
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 22px;
+    box-shadow: var(--shadow-card-md);
+  }
+
+  /* --- 기존 클래스 v2 토큰으로 재정의 (구조 유지) --- */
+  .glassmorphism {
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
   .verse-card {
-    @apply glassmorphism rounded-2xl p-4 sm:p-5 shadow-lg hover:shadow-xl transition-all duration-300;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 22px;
+    padding: 14px 18px;
+    box-shadow: var(--shadow-card-sm);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+  .verse-card:hover {
+    box-shadow: var(--shadow-card-md);
   }
 
   .verse-card-active {
-    @apply bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-5 border-2 shadow-xl;
-    background: linear-gradient(135deg, hsl(251, 82%, 67%, 0.1), hsl(166, 73%, 45%, 0.1));
-    border-color: hsl(251, 82%, 67%, 0.2);
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 28px;
+    padding: 24px 22px 20px;
+    box-shadow: var(--shadow-card-md);
+    position: relative;
+    overflow: hidden;
   }
 
   .nav-button {
-    @apply flex flex-col items-center space-y-1 py-2 px-3 rounded-xl transition-colors;
+    @apply flex flex-col items-center space-y-1 py-2 px-3 rounded-xl;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
-
   .nav-button-active {
-    @apply text-primary;
-    background-color: hsl(251, 82%, 67%, 0.1);
+    color: var(--ink);
+    background-color: var(--surface-muted);
+  }
+  .nav-button-inactive {
+    color: var(--ink-muted);
+  }
+  .nav-button-inactive:hover {
+    color: var(--ink-soft);
+    background-color: var(--surface-muted);
   }
 
-  .nav-button-inactive {
-    @apply hover:bg-gray-100 text-gray-400;
+  /* --- v2 그라데이션 (legacy 매핑: primary 자리 → ink 톤) --- */
+  .gradient-primary {
+    background: linear-gradient(135deg, var(--ink) 0%, var(--ink-soft) 100%);
+    color: var(--surface);
+  }
+  .gradient-secondary {
+    background: linear-gradient(135deg, var(--surface-muted) 0%, var(--page-bg-warm) 100%);
+    color: var(--ink);
+  }
+
+  /* --- Liquid Glass (Design2 2-7)
+       Android WebView GPU 압박 방지를 위해 blur 강도를 16px로 낮추고
+       backdrop-filter를 지원하지 않는 환경에서도 시각적으로 충분하도록
+       background 알파를 높여 폴백 처리 --- */
+  .liquid-glass {
+    position: relative;
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    background: rgba(255, 255, 255, 0.78);
+    border: 0.5px solid rgba(255, 255, 255, 0.5);
+    box-shadow: var(--shadow-glass);
+    overflow: hidden;
+    /* GPU 합성 레이어로 승격해 leak 방지 */
+    transform: translateZ(0);
+    will-change: transform;
+  }
+  .dark .liquid-glass {
+    background: rgba(30, 30, 30, 0.78);
+    border: 0.5px solid rgba(255, 255, 255, 0.12);
+  }
+  /* backdrop-filter 미지원 디바이스 폴백 */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .liquid-glass {
+      background: rgba(255, 255, 255, 0.94);
+    }
+    .dark .liquid-glass {
+      background: rgba(26, 26, 26, 0.96);
+    }
+  }
+  .liquid-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow:
+      inset 1.5px 1.5px 1.5px rgba(255, 255, 255, 0.85),
+      inset -1px -1px 1.5px rgba(255, 255, 255, 0.4);
+  }
+  .dark .liquid-glass::before {
+    box-shadow:
+      inset 1px 1px 1.5px rgba(255, 255, 255, 0.15),
+      inset -1px -1px 1.5px rgba(255, 255, 255, 0.05);
+  }
+  .liquid-glass::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+  }
+  .dark .liquid-glass::after {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+  }
+
+  /* --- 디스플레이 타이포 (Design2 2-4) --- */
+  .display-xl {
+    font-family: 'Inter', sans-serif;
+    font-weight: 200;
+    font-size: clamp(48px, 9vw, 72px);
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+  }
+  .display-l {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: clamp(36px, 7vw, 52px);
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+  }
+  .display-m {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: clamp(28px, 5vw, 36px);
+    letter-spacing: -0.03em;
+    line-height: 1.0;
+  }
+  .eyebrow {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  /* --- 부서별 글로우 데코 (절대 위치 레이어) --- */
+  .dept-glow {
+    position: absolute;
+    pointer-events: none;
+    width: 200px;
+    height: 180px;
+    top: -40px;
+    right: -40px;
+    border-radius: 50%;
+    filter: blur(2px);
+  }
+  .dept-glow[data-dept="kindergarten"] { background: var(--glow-kindergarten); }
+  .dept-glow[data-dept="elementary"]   { background: var(--glow-elementary); }
+  .dept-glow[data-dept="youth"]        { background: var(--glow-youth); }
+
+  /* --- 부서 chip --- */
+  .dept-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .dept-chip[data-dept="kindergarten"] {
+    background: var(--dept-kg-chip);
+    color: var(--dept-kg-chip-text);
+  }
+  .dept-chip[data-dept="elementary"] {
+    background: var(--dept-el-chip);
+    color: var(--dept-el-chip-text);
+  }
+  .dept-chip[data-dept="youth"] {
+    background: var(--dept-yt-chip);
+    color: var(--dept-yt-chip-text);
+  }
+
+  /* --- Ambient Glow 페이지 배경 레이어 --- */
+  .ambient-glow-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: var(--ambient-glow);
+  }
+
+  /* --- FlashcardModal: 다크모드에서도 항상 라이트 톤 강제 ---
+       내부에 hardcoded gray-* / blue-* 클래스가 많아 다크모드에서 흰글자/흰배경 충돌 → 라이트로 잠금 */
+  .flashcard-force-light,
+  .flashcard-force-light * {
+    color: #1a1a1a !important;
+  }
+  .flashcard-force-light {
+    background: #ffffff !important;
+  }
+  .flashcard-force-light .text-blue-700 { color: #1d4ed8 !important; }
+  .flashcard-force-light .text-orange-700 { color: #c2410c !important; }
+  .flashcard-force-light .text-red-700 { color: #b91c1c !important; }
+  .flashcard-force-light .text-green-700 { color: #15803d !important; }
+  .flashcard-force-light .text-emerald-700 { color: #047857 !important; }
+  .flashcard-force-light .text-blue-600 { color: #2563eb !important; }
+  .flashcard-force-light .text-gray-300,
+  .flashcard-force-light .text-gray-400 { color: #9ca3af !important; }
+  .flashcard-force-light .text-gray-500 { color: #6b7280 !important; }
+  /* 완료 화면의 '다시 도전하기' 검정 버튼 — 라이트 강제 룰에 의해 글자가 보이지 않는 문제 해결 */
+  .flashcard-force-light .flashcard-dark-cta,
+  .flashcard-force-light .flashcard-dark-cta * { color: #ffffff !important; }
+
+  /* --- 네비 활성 탭: 투명 글래스 톤 (부모 .liquid-glass가 이미 backdrop 처리)
+       backdrop-filter 중첩 시 Android WebView GPU 크래시 위험 → 알파 배경으로만 처리 --- */
+  .nav-tab-active-glass {
+    background: rgba(255, 255, 255, 0.55);
+    border: 0.5px solid rgba(255, 255, 255, 0.7);
+    box-shadow:
+      inset 1px 1px 1.5px rgba(255, 255, 255, 0.9),
+      inset -1px -1px 1.5px rgba(255, 255, 255, 0.4),
+      0 2px 6px rgba(0, 0, 0, 0.06);
+  }
+  .dark .nav-tab-active-glass {
+    background: rgba(255, 255, 255, 0.18);
+    border: 0.5px solid rgba(255, 255, 255, 0.24);
+    box-shadow:
+      inset 1px 1px 1.5px rgba(255, 255, 255, 0.18),
+      inset -1px -1px 1.5px rgba(255, 255, 255, 0.05),
+      0 2px 6px rgba(0, 0, 0, 0.4);
   }
 }
 
-/* Utility: 2-line clamp without plugin */
+/* =====================================================================
+   Utility
+   ===================================================================== */
 .clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;

@@ -59,7 +59,10 @@ export default function SplashPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="px-4 pt-14 pb-5 border-b bg-white/80 backdrop-blur z-10 grid grid-cols-3 items-center">
+      <header
+        className="px-4 pt-14 pb-5 border-b z-10 grid grid-cols-3 items-center"
+        style={{ background: 'var(--page-bg)', borderColor: 'var(--border-soft)' }}
+      >
         <div className="justify-self-start">
           <Link href="/home">
             <a className="inline-flex items-center gap-1 text-gray-700 hover:text-gray-900">
@@ -76,13 +79,14 @@ export default function SplashPage() {
         </div>
       </header>
 
-      {/* Image body */}
+      {/* Image body — 화면 전체 기준으로 시각적 중앙에 오도록 약간 위쪽으로 앵커링 */}
       <main className="flex-1 relative">
-        <div 
-          className="absolute inset-0 bg-no-repeat bg-center"
+        <div
+          className="absolute inset-0 bg-no-repeat"
           style={{
             backgroundImage: 'url(/splash-image.jpg), url(/splash-image.png)',
-            backgroundSize: 'contain'
+            backgroundSize: 'contain',
+            backgroundPosition: 'center 30%',
           }}
         />
       </main>

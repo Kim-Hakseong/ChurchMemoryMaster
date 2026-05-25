@@ -183,19 +183,26 @@ export class ExcelParser {
 
           // Extract reference from content (usually in parentheses at the end)
           let reference = '';
-          const contentStr = String(contentValue);
+          let contentStr = String(contentValue);
+
+          // 2년차/3년차 데이터에서 구절 앞에 공과명이 중복 포함된 경우 제거
+          const lessonNameStr = String(lessonName).trim();
+          if (lessonNameStr && contentStr.startsWith(lessonNameStr)) {
+            contentStr = contentStr.slice(lessonNameStr.length).trim();
+          }
+
           const refMatch = contentStr.match(/\(([^)]+)\)\s*$/);
           if (refMatch) {
             reference = refMatch[1].trim();
             // Remove the reference from content
             const contentWithoutRef = contentStr.replace(/\s*\([^)]+\)\s*$/, '').trim();
-            
+
             const verse: Verse = {
               id: id++,
               date: dateStr,
               reference: reference,
               content: contentWithoutRef,
-              lessonName: String(lessonName).trim(),
+              lessonName: lessonNameStr,
               ageGroup,
             };
 
@@ -207,9 +214,9 @@ export class ExcelParser {
             const verse: Verse = {
               id: id++,
               date: dateStr,
-              reference: String(lessonName).trim(),
+              reference: lessonNameStr,
               content: contentStr,
-              lessonName: String(lessonName).trim(),
+              lessonName: lessonNameStr,
               ageGroup,
             };
 

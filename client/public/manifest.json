@@ -1,11 +1,11 @@
 {
-  "name": "교회학교 암송",
-  "short_name": "교회학교 암송",
+  "name": "교회학교 암송 수첩",
+  "short_name": "교회학교 암송 수첩",
   "description": "교회학교 암송 말씀 관리 앱",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#7c3aed",
+  "theme_color": "#0AAFAF",
   "orientation": "portrait",
   "icons": [
     {

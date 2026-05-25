@@ -7,11 +7,30 @@
     
     <!-- PWA 설정 -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#7c3aed" />
+    <meta name="theme-color" content="#0AAFAF" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="암송말씀" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- 옛 SW/캐시 즉시 정리 — main.tsx 로드 전에 동기적으로 실행되어
+         네이티브 WebView가 v1 자산으로 부팅되는 문제를 차단 -->
+    <script>
+      (function () {
+        try {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              regs.forEach(function (r) { try { r.unregister(); } catch (e) {} });
+            }).catch(function () {});
+          }
+          if (typeof caches !== 'undefined' && caches.keys) {
+            caches.keys().then(function (keys) {
+              keys.forEach(function (k) { try { caches.delete(k); } catch (e) {} });
+            }).catch(function () {});
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

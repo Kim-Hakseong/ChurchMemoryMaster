@@ -1,7 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">교회학교 암송</string>
-    <string name="title_activity_main">교회학교 암송</string>
+    <string name="app_name">교회학교 암송 수첩</string>
+    <string name="title_activity_main">교회학교 암송 수첩</string>
     <string name="package_name">com.church.memory.app</string>
     <string name="custom_url_scheme">com.church.memory.app</string>
+    <string name="widget_medium_desc">이번 주 암송 구절 (4x2)</string>
+    <string name="widget_large_desc">주간 암송 구절 (3주)</string>
 </resources>

@@ -65,22 +65,10 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
           {/* 세련된 오버레이 */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10" />
           
-          {/* 로고/제목 오버레이 */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.8 }}
-            className="absolute top-8 left-0 right-0 text-center"
-          >
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl mx-8 py-4 px-6 shadow-xl">
-              <h1 className="text-2xl font-bold text-gray-800 mb-1">교회학교 암송 말씀</h1>
-              <p className="text-sm text-gray-600">Church Memory Master</p>
-            </div>
-          </motion.div>
         </>
       ) : (
         // Fallback 배경 (이미지 로드 실패시)
-        <div className="w-full h-full bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-700">
+        <div className="w-full h-full bg-gradient-to-br from-teal-500 via-teal-600 to-cyan-700">
           <div className="absolute inset-0 flex items-center justify-center">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
@@ -106,27 +94,25 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         transition={{ delay: 1.2, duration: 0.5 }}
         className="absolute bottom-12 left-1/2 transform -translate-x-1/2 z-10"
       >
-        <div className="bg-white/80 backdrop-blur-sm rounded-full px-6 py-4 shadow-xl">
-          <div className="flex items-center space-x-3">
-            <div className="flex space-x-1">
-              {[0, 1, 2].map((i) => (
-                <motion.div
-                  key={i}
-                  className="w-2.5 h-2.5 bg-blue-500 rounded-full"
-                  animate={{
-                    scale: [1, 1.5, 1],
-                    opacity: [0.6, 1, 0.6],
-                  }}
-                  transition={{
-                    duration: 1.2,
-                    repeat: Infinity,
-                    delay: i * 0.15,
-                  }}
-                />
-              ))}
-            </div>
-            <span className="text-sm text-gray-700 font-medium">로딩 중...</span>
+        <div className="flex items-center space-x-3">
+          <div className="flex space-x-1">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2.5 h-2.5 bg-white rounded-full drop-shadow-md"
+                animate={{
+                  scale: [1, 1.5, 1],
+                  opacity: [0.6, 1, 0.6],
+                }}
+                transition={{
+                  duration: 1.2,
+                  repeat: Infinity,
+                  delay: i * 0.15,
+                }}
+              />
+            ))}
           </div>
+          <span className="text-sm text-white font-medium drop-shadow-md">로딩 중...</span>
         </div>
       </motion.div>
     </motion.div>

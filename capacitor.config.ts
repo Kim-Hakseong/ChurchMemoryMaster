@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.church.memory.app.v15',
-  appName: '교회학교 암송',
+  appId: 'com.church.memory.app',
+  appName: '교회학교 암송 수첩',
   webDir: 'dist/public',
   server: {
     androidScheme: 'https',
@@ -14,7 +14,7 @@ const config: CapacitorConfig = {
     allowMixedContent: true,
     captureInput: true,
     webContentsDebuggingEnabled: true,
-    appendUserAgent: 'ChurchMemoryApp/2.3'
+    appendUserAgent: 'ChurchMemoryApp/1.0'
   }
 };
 

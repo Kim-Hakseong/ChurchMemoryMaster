@@ -1,7 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Capacitor } from '@capacitor/core';
 import { motion } from "framer-motion";
-import { ArrowLeft, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Download, Upload, Plus, X, Trash2, Minus } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Download, Upload, Plus, X, Trash2, Minus, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,8 @@ import { ExcelParser } from "@/lib/excel-parser";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { LocalStorage } from "@/lib/storage";
+import { setupBackHandler, cleanupBackHandler, exitApp } from "@/lib/back-handler";
+import ExitConfirmDialog from "@/components/exit-confirm-dialog";
 import type { Event } from "@shared/schema";
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -27,8 +29,8 @@ const MONTHS = [
 
 // 이벤트 색상 배열
 const EVENT_COLORS = [
-  'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-red-500', 
-  'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500', 'bg-orange-500'
+  'bg-blue-500', 'bg-green-500', 'bg-teal-500', 'bg-red-500',
+  'bg-yellow-500', 'bg-pink-500', 'bg-cyan-500', 'bg-orange-500'
 ];
 
 export default function Calendar() {
@@ -40,7 +42,11 @@ export default function Calendar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showExitDialog, setShowExitDialog] = useState(false);
   
+  // CSV 팝업 상태
+  const [showCsvModal, setShowCsvModal] = useState(false);
+
   // 일정 추가 모달 상태
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showDeleteEventModal, setShowDeleteEventModal] = useState(false);
@@ -54,6 +60,18 @@ export default function Calendar() {
     startDate: '',
     endDate: ''
   });
+
+  // 뒤로가기 핸들러 (메인 탭 - 종료 확인)
+  useEffect(() => {
+    setupBackHandler({
+      isMainTab: true,
+      onExitConfirm: () => setShowExitDialog(true),
+    });
+
+    return () => {
+      cleanupBackHandler();
+    };
+  }, []);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(prev => {
@@ -271,16 +289,25 @@ export default function Calendar() {
     return days;
   };
 
+  // 이벤트가 이미 지난 일정인지 확인 (종료일 또는 date가 오늘 이전)
+  const isEventPast = (event: Event): boolean => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eventEnd = new Date((event.endDate || event.date) + 'T00:00:00');
+    eventEnd.setHours(0, 0, 0, 0);
+    return eventEnd < today;
+  };
+
   // 해당 날짜의 이벤트들과 색상 정보 반환
   const getEventsOnDate = (date: Date) => {
-    // SQLite 캐시에서 가져오기
-    const allEvents = LocalStorage.getEventsSync();
+    // SQLite 캐시에서 가져오기 + 과거 이벤트 필터링
+    const allEvents = LocalStorage.getEventsSync().filter((ev: Event) => !isEventPast(ev));
     // 시간대 문제를 피하기 위해 로컬 시간대로 날짜 문자열 생성
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
-    
+
     const eventsOnDate = allEvents.filter((event: Event) => {
       // 기본 이벤트 날짜 확인
       if (event.date === dateStr) {
@@ -329,44 +356,47 @@ export default function Calendar() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col pb-16">
+    <div className="min-h-screen flex flex-col pb-12">
       <CaptureButton />
       
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-200 px-4 sm:px-6 pt-12 pb-4 shadow-sm">
+      <header
+        className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 pt-6 pb-1 shadow-sm"
+        style={{
+          background: 'var(--page-bg)',
+          borderBottom: '1px solid var(--border-soft)',
+        }}
+      >
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           {/* 왼쪽: 제목과 날짜 */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-              <CalendarIcon className="text-purple-600 w-4 h-4" />
+          <div className="flex items-center gap-2">
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: 'var(--surface-muted)' }}
+            >
+              <CalendarIcon className="w-3.5 h-3.5" style={{ color: 'var(--ink)' }} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">교회학교 캘린더</h1>
-              <p className="text-sm text-gray-500">{formatDate(new Date())}</p>
+              <h1 className="text-lg font-bold" style={{ color: 'var(--ink)' }}>캘린더</h1>
+              <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>{formatDate(new Date())}</p>
             </div>
           </div>
-          
-          {/* 오른쪽: 관리 버튼들 (수직 배치) */}
-          <div className="flex flex-col space-y-2 mr-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportCsv}
-              className="bg-white/50 hover:bg-white/70 border-gray-200 h-8 text-xs"
-            >
-              <Download className="w-3 h-3 mr-1" />
-              내보내기
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleUploadClick}
-              className="bg-white/50 hover:bg-white/70 border-gray-200 h-8 text-xs"
-            >
-              <Upload className="w-3 h-3 mr-1" />
-              업로드
-            </Button>
-          </div>
+
+          {/* 오른쪽: CSV 파일 버튼 */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCsvModal(true)}
+            className="h-8 text-xs mr-4"
+            style={{
+              background: 'var(--surface)',
+              color: 'var(--ink-soft)',
+              borderColor: 'var(--border-soft)',
+            }}
+          >
+            <FileSpreadsheet className="w-3 h-3 mr-1" />
+            CSV파일
+          </Button>
         </div>
         
         {/* 숨겨진 파일 입력 */}
@@ -380,28 +410,28 @@ export default function Calendar() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 px-4 sm:px-6 py-4 pb-24 pt-32">
+      <main className="relative z-10 flex-1 px-4 sm:px-6 py-4 pb-16 pt-16">
         <div className="max-w-4xl mx-auto space-y-6">
-        {/* Month Navigation - 상단과 달력 사이 중간으로 더 내림 */}
-        <div className="flex items-center justify-between mt-6 mb-2">
+        {/* Month Navigation */}
+        <div className="flex items-center justify-between mt-1.5 mb-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigateMonth('prev')}
-            className="w-10 h-10 p-0 hover:bg-gray-100"
+            className="w-10 h-10 p-0 hover:bg-surface-muted"
           >
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
+            <ChevronLeft className="w-5 h-5" style={{ color: 'var(--ink-soft)' }} />
           </Button>
-          <h2 className="text-xl font-semibold text-gray-800">
+          <h2 className="text-xl font-semibold" style={{ color: 'var(--ink)' }}>
             {currentYear}년 {MONTHS[currentMonth]}
           </h2>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigateMonth('next')}
-            className="w-10 h-10 p-0 hover:bg-gray-100"
+            className="w-10 h-10 p-0 hover:bg-surface-muted"
           >
-            <ChevronRight className="w-5 h-5 text-gray-600" />
+            <ChevronRight className="w-5 h-5" style={{ color: 'var(--ink-soft)' }} />
           </Button>
         </div>
 
@@ -410,7 +440,7 @@ export default function Calendar() {
           {/* Calendar Header */}
           <div className="grid grid-cols-7 gap-1 mb-4">
             {DAYS.map((day) => (
-              <div key={day} className="text-center text-sm font-medium text-gray-500 py-3">
+              <div key={day} className="text-center text-sm font-medium py-3" style={{ color: 'var(--ink-muted)' }}>
                 {day}
               </div>
             ))}
@@ -423,33 +453,42 @@ export default function Calendar() {
               const eventsOnDate = getEventsOnDate(date);
               const hasEvent = eventsOnDate.length > 0;
               const today = isToday(date);
-              
+
+              const cellColor = !isCurrentMonth
+                ? 'var(--ink-faint)'
+                : today
+                  ? 'var(--surface)'
+                  : 'var(--ink-soft)';
+
               return (
                 <motion.button
                   key={index}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`
-                    aspect-square flex flex-col items-center justify-center text-sm rounded-xl transition-all duration-200 relative
-                    ${!isCurrentMonth ? 'text-gray-300' : 'text-gray-700'}
-                    ${today ? 'bg-primary text-white font-semibold shadow-lg' : ''}
-                    ${hasEvent && !today ? 'text-primary font-medium' : ''}
-                    ${!hasEvent && !today && isCurrentMonth ? 'hover:bg-gray-50' : ''}
-                  `}
-                  style={hasEvent && !today ? {backgroundColor: 'hsl(251, 82%, 67%, 0.1)'} : undefined}
+                  className="aspect-square flex flex-col items-center justify-center text-sm rounded-xl transition-all duration-200 relative"
+                  style={{
+                    color: cellColor,
+                    fontWeight: today || (hasEvent && !today) ? 600 : 400,
+                    background: today
+                      ? 'var(--ink)'
+                      : hasEvent && !today
+                        ? 'var(--surface-muted)'
+                        : 'transparent',
+                    boxShadow: today ? '0 4px 12px rgba(0,0,0,0.18)' : undefined,
+                  }}
                 >
                   {date.getDate()}
                   {/* 다중 이벤트 점들 표시 */}
                   {hasEvent && !today && (
                     <div className="absolute bottom-1 flex space-x-0.5">
                       {eventsOnDate.slice(0, 3).map((event: Event, eventIndex: number) => (
-                        <div 
-                          key={event.id} 
-                          className={`w-1.5 h-1.5 rounded-full ${getEventColor(event.id)}`} 
+                        <div
+                          key={event.id}
+                          className={`w-1.5 h-1.5 rounded-full ${getEventColor(event.id)}`}
                         />
                       ))}
                       {eventsOnDate.length > 3 && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--ink-faint)' }} />
                       )}
                     </div>
                   )}
@@ -460,10 +499,13 @@ export default function Calendar() {
         </div>
 
         {/* Events List */}
-        {calendarData?.events && calendarData.events.length > 0 ? (
+        {(() => {
+          // 과거 이벤트 필터링
+          const activeEvents = (calendarData?.events || []).filter(ev => !isEventPast(ev));
+          return activeEvents.length > 0 ? (
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg sm:text-lg text-base font-semibold text-gray-800 whitespace-nowrap">이번 달 행사</h3>
+              <h3 className="text-lg sm:text-lg text-base font-semibold whitespace-nowrap" style={{ color: 'var(--ink)' }}>이번 달 행사</h3>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -485,7 +527,7 @@ export default function Calendar() {
                 </Button>
               </div>
             </div>
-            {calendarData.events.map((event, index) => (
+            {activeEvents.map((event, index) => (
               <motion.div
                 key={event.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -496,10 +538,10 @@ export default function Calendar() {
                 <div className="flex items-start space-x-3">
                   <div className={`w-3 h-3 rounded-full flex-shrink-0 mt-1 ${getEventColor(event.id)}`} />
                   <div className="flex-1">
-                    <h4 className="text-base font-medium text-gray-800 mb-1">
+                    <h4 className="text-base font-medium mb-1" style={{ color: 'var(--ink)' }}>
                       {event.title}
                     </h4>
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-sm mb-2" style={{ color: 'var(--ink-soft)' }}>
                       {event.startDate && event.endDate ? (
                         // 기간 이벤트인 경우
                         <>
@@ -528,7 +570,7 @@ export default function Calendar() {
                       )}
                     </p>
                     {event.description && (
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
                         {event.description}
                       </p>
                     )}
@@ -540,7 +582,7 @@ export default function Calendar() {
         ) : (
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg sm:text-lg text-base font-semibold text-gray-800 whitespace-nowrap">이번 달 행사</h3>
+              <h3 className="text-lg sm:text-lg text-base font-semibold whitespace-nowrap" style={{ color: 'var(--ink)' }}>이번 달 행사</h3>
               <Button
                 variant="outline"
                 size="sm"
@@ -566,7 +608,8 @@ export default function Calendar() {
               </Button>
             </div>
           </section>
-        )}
+        );
+        })()}
 
 
         </div>
@@ -574,7 +617,7 @@ export default function Calendar() {
 
       {/* 일정 추가 모달 */}
       <Dialog open={showAddEventModal} onOpenChange={setShowAddEventModal}>
-        <DialogContent className="sm:max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>새 일정 추가</DialogTitle>
           </DialogHeader>
@@ -587,30 +630,11 @@ export default function Calendar() {
                 id="event-title"
                 type="text"
                 value={newEvent.title}
-                onChange={(e) => {
-                  e.preventDefault();
-                  const value = e.target.value;
-                  console.log('📝 제목 입력:', value);
-                  setNewEvent(prev => {
-                    const updated = { ...prev, title: value };
-                    console.log('📝 상태 업데이트:', updated);
-                    return updated;
-                  });
-                }}
-                onBlur={(e) => {
-                  const value = e.target.value;
-                  console.log('📝 제목 블러:', value);
-                  setNewEvent(prev => ({ ...prev, title: value }));
-                }}
+                onChange={(e) => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
                 className="w-full"
                 placeholder="행사 제목을 입력하세요"
                 autoComplete="off"
-                autoCorrect="off"
-                spellCheck="false"
               />
-              <div className="text-xs text-gray-500">
-                현재 입력값: "{newEvent.title}"
-              </div>
             </div>
             
             {/* 설명 */}
@@ -712,7 +736,7 @@ export default function Calendar() {
 
       {/* 일정 삭제 모달 */}
       <Dialog open={showDeleteEventModal} onOpenChange={setShowDeleteEventModal}>
-        <DialogContent className="sm:max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>일정 삭제</DialogTitle>
           </DialogHeader>
@@ -720,9 +744,11 @@ export default function Calendar() {
           <div className="space-y-4 py-4">
             <p className="text-sm text-gray-600 mb-4">삭제할 일정을 선택하세요:</p>
             
-            {calendarData?.events && calendarData.events.length > 0 ? (
+            {(() => {
+              const deleteActiveEvents = (calendarData?.events || []).filter(ev => !isEventPast(ev));
+              return deleteActiveEvents.length > 0 ? (
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {calendarData.events.map((event) => (
+                {deleteActiveEvents.map((event) => (
                   <div 
                     key={event.id}
                     className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
@@ -730,7 +756,7 @@ export default function Calendar() {
                     <div className="flex items-center space-x-3">
                       <div className={`w-3 h-3 rounded-full ${getEventColor(event.id)}`} />
                       <div>
-                        <h4 className="text-sm font-medium text-gray-800">{event.title}</h4>
+                        <h4 className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{event.title}</h4>
                         <p className="text-xs text-gray-500">
                           {new Date(event.date + 'T00:00:00').toLocaleDateString('ko-KR')}
                         </p>
@@ -749,7 +775,8 @@ export default function Calendar() {
               </div>
             ) : (
               <p className="text-sm text-gray-500">삭제할 일정이 없습니다.</p>
-            )}
+            );
+            })()}
           </div>
           
           <div className="flex justify-end pt-4 border-t">
@@ -763,7 +790,46 @@ export default function Calendar() {
         </DialogContent>
       </Dialog>
 
+      {/* CSV 파일 팝업 */}
+      <Dialog open={showCsvModal} onOpenChange={setShowCsvModal}>
+        <DialogContent className="sm:max-w-xs max-w-[calc(100vw-2rem)]">
+          <DialogHeader>
+            <DialogTitle>CSV 파일</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            <Button
+              variant="outline"
+              onClick={() => { setShowCsvModal(false); handleExportCsv(); }}
+              className="w-full justify-start gap-2 h-12"
+            >
+              <Download className="w-4 h-4" />
+              <div className="text-left">
+                <div className="text-sm font-medium">내보내기</div>
+                <div className="text-xs text-gray-500">현재 일정을 CSV로 저장</div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => { setShowCsvModal(false); handleUploadClick(); }}
+              className="w-full justify-start gap-2 h-12"
+            >
+              <Upload className="w-4 h-4" />
+              <div className="text-left">
+                <div className="text-sm font-medium">업로드</div>
+                <div className="text-xs text-gray-500">CSV/Excel 파일에서 일정 가져오기</div>
+              </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BottomNavigation />
+
+      <ExitConfirmDialog
+        open={showExitDialog}
+        onOpenChange={setShowExitDialog}
+        onConfirm={exitApp}
+      />
     </div>
   );
 }

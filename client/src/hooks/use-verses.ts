@@ -1,6 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LocalStorage } from "@/lib/storage";
-import { getCurrentWeekRange, getLastWeekRange, getNextWeekRange, isDateInRange } from "@/lib/date-utils";
+import {
+  getCurrentWeekRange,
+  getLastWeekRange,
+  getNextWeekRange,
+  isDateInRange,
+  getVerseForWeek,
+} from "@/lib/date-utils";
 import type { Verse, AgeGroup } from "@shared/schema";
 
 export interface WeeklyVerses {
@@ -27,61 +33,22 @@ export function useWeeklyVerses(ageGroup: AgeGroup) {
     queryKey: ['weekly-verses', ageGroup],
     queryFn: (): WeeklyVerses => {
       const verses = LocalStorage.getVersesByAgeGroup(ageGroup);
-      
-      // 현재 날짜 기준으로 정확한 주차 계산
+
       const currentDate = new Date();
-      const lastWeekRange = getLastWeekRange(currentDate);    // 지난주
-      const thisWeekRange = getCurrentWeekRange(currentDate); // 이번주 
-      const nextWeekRange = getNextWeekRange(currentDate);    // 다음주
-      
-      // 날짜 범위에 맞는 암송구절 찾기
-      const lastWeek = verses.find(verse => {
-        const verseDate = new Date(verse.date + 'T00:00:00');
-        return isDateInRange(verseDate, lastWeekRange);
-      }) || null;
-      
-      const thisWeek = verses.find(verse => {
-        const verseDate = new Date(verse.date + 'T00:00:00');
-        return isDateInRange(verseDate, thisWeekRange);
-      }) || null;
-      
-      const nextWeek = verses.find(verse => {
-        const verseDate = new Date(verse.date + 'T00:00:00');
-        return isDateInRange(verseDate, nextWeekRange);
-      }) || null;
-      
-      console.log(`=== ${ageGroup} Weekly Verses ===`);
+      const lastWeekDate = new Date(currentDate); lastWeekDate.setDate(currentDate.getDate() - 7);
+      const nextWeekDate = new Date(currentDate); nextWeekDate.setDate(currentDate.getDate() + 7);
+
+      // 사이클 wrap 적용 — 데이터 끝나도 자동으로 처음부터 반복
+      const lastWeek = getVerseForWeek(verses, lastWeekDate, ageGroup);
+      const thisWeek = getVerseForWeek(verses, currentDate, ageGroup);
+      const nextWeek = getVerseForWeek(verses, nextWeekDate, ageGroup);
+
+      console.log(`=== ${ageGroup} Weekly Verses (cycle-wrapped) ===`);
       console.log('현재 날짜:', currentDate.toLocaleDateString('ko-KR'));
-      console.log('지난주 범위:', lastWeekRange.start.toLocaleDateString('ko-KR'), '~', lastWeekRange.end.toLocaleDateString('ko-KR'));
-      console.log('이번주 범위:', thisWeekRange.start.toLocaleDateString('ko-KR'), '~', thisWeekRange.end.toLocaleDateString('ko-KR'));
-      console.log('다음주 범위:', nextWeekRange.start.toLocaleDateString('ko-KR'), '~', nextWeekRange.end.toLocaleDateString('ko-KR'));
-      console.log('지난주 구절:', lastWeek?.reference || '없음', '-', lastWeek?.content || '');
-      console.log('이번주 구절:', thisWeek?.reference || '없음', '-', thisWeek?.content || '');
-      console.log('다음주 구절:', nextWeek?.reference || '없음', '-', nextWeek?.content || '');
-      
-      // 매칭되는 구절이 없으면 가장 가까운 구절들을 찾아보기 (디버깅용)
-      if (!thisWeek && verses.length > 0) {
-        console.log('=== 이번주 매칭 실패 - 전체 구절 날짜 확인 ===');
-        const sortedVerses = verses
-          .map(v => ({ ...v, date: new Date(v.date + 'T00:00:00') }))
-          .sort((a, b) => a.date.getTime() - b.date.getTime());
-        
-        console.log('첫 구절 날짜:', sortedVerses[0]?.date.toLocaleDateString('ko-KR'));
-        console.log('마지막 구절 날짜:', sortedVerses[sortedVerses.length - 1]?.date.toLocaleDateString('ko-KR'));
-        
-        // 현재 주차와 가장 가까운 구절들 찾기
-        const currentWeekStart = thisWeekRange.start.getTime();
-        const closestVerses = sortedVerses
-          .map(v => ({ ...v, distance: Math.abs(v.date.getTime() - currentWeekStart) }))
-          .sort((a, b) => a.distance - b.distance)
-          .slice(0, 3);
-        
-        console.log('가장 가까운 구절들:');
-        closestVerses.forEach((v, i) => {
-          console.log(`${i + 1}. ${v.date.toLocaleDateString('ko-KR')} - ${v.reference}: ${v.content.substring(0, 30)}...`);
-        });
-      }
-      
+      console.log('지난주:', lastWeek?.reference || '없음');
+      console.log('이번주:', thisWeek?.reference || '없음');
+      console.log('다음주:', nextWeek?.reference || '없음');
+
       return { lastWeek, thisWeek, nextWeek };
     },
     staleTime: 5 * 60 * 1000,

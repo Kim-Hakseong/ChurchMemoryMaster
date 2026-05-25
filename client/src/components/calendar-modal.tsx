@@ -148,7 +148,7 @@ export default function CalendarModal({ isOpen, onClose }: CalendarModalProps) {
                       ${today ? 'bg-primary text-white font-semibold' : 'hover:bg-gray-50'}
                       ${hasEvent && !today ? 'text-primary' : ''}
                     `}
-                    style={hasEvent && !today ? {backgroundColor: 'hsl(251, 82%, 67%, 0.1)'} : undefined}
+                    style={hasEvent && !today ? {backgroundColor: 'hsl(180, 89%, 36%, 0.1)'} : undefined}
                   >
                     {date.getDate()}
                     {hasEvent && !today && (
@@ -169,7 +169,7 @@ export default function CalendarModal({ isOpen, onClose }: CalendarModalProps) {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="rounded-xl p-3"
-                    style={{backgroundColor: 'hsl(251, 82%, 67%, 0.05)'}}
+                    style={{backgroundColor: 'hsl(180, 89%, 36%, 0.05)'}}
                   >
                     <div className="flex items-center space-x-3">
                       <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />

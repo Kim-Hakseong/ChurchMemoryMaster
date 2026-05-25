@@ -22,14 +22,6 @@ export default function MonthlyVerse() {
   
   const { data: monthlyVerse, isLoading, error } = useMonthlyVerse(currentYear, currentMonth);
 
-  // 디버깅: 월암송 데이터 상태 로그
-  console.log('월암송 페이지 상태:', {
-    currentYear,
-    currentMonth,
-    monthlyVerse,
-    isLoading,
-    error
-  });
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(prev => {
@@ -66,42 +58,49 @@ export default function MonthlyVerse() {
 
   return (
     <div className="min-h-screen flex flex-col pb-16">
-      <CaptureButton />
-      
       {/* Header */}
-      <header className="relative z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-4 sm:px-6 pt-12 pb-4">
+      <header
+        className="relative z-10 px-4 sm:px-6 pt-8 pb-2"
+        style={{
+          background: 'var(--page-bg)',
+          borderBottom: '1px solid var(--border-soft)',
+        }}
+      >
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center space-x-3">
-            <h1 className="text-xl font-bold text-gray-800">초등월암송</h1>
-            <p className="text-sm text-gray-500">{formatDate(new Date())}</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <h1 className="text-lg font-bold" style={{ color: 'var(--ink)' }}>초등월암송</h1>
+              <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>{formatDate(new Date())}</p>
+            </div>
+            <CaptureButton />
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 px-4 sm:px-6 py-6">
-        <div className="max-w-4xl mx-auto space-y-6">
-          
+      <main className="relative z-10 flex-1 px-4 sm:px-6 py-3">
+        <div className="max-w-4xl mx-auto space-y-4">
+
           {/* Month Navigation */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-3">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigateMonth('prev')}
-              className="w-10 h-10 p-0 hover:bg-gray-100"
+              className="w-10 h-10 p-0 hover:bg-surface-muted"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-5 h-5" style={{ color: 'var(--ink-soft)' }} />
             </Button>
-            <h2 className="text-xl font-semibold text-gray-800">
+            <h2 className="text-xl font-semibold" style={{ color: 'var(--ink)' }}>
               {currentYear}년 {MONTHS[currentMonth - 1]}
             </h2>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigateMonth('next')}
-              className="w-10 h-10 p-0 hover:bg-gray-100"
+              className="w-10 h-10 p-0 hover:bg-surface-muted"
             >
-              <ChevronRight className="w-5 h-5 text-gray-600" />
+              <ChevronRight className="w-5 h-5" style={{ color: 'var(--ink-soft)' }} />
             </Button>
           </div>
 
@@ -119,34 +118,42 @@ export default function MonthlyVerse() {
               className="verse-card relative"
             >
               {/* Quote Icon */}
-              <div className="flex items-center justify-center mb-6">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Quote className="w-8 h-8 text-primary" />
+              <div className="flex items-center justify-center mb-3">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Quote className="w-6 h-6 text-primary" />
                 </div>
               </div>
 
               {/* Verse Content */}
-              <div className="text-center space-y-4">
-                <div className="text-lg sm:text-xl leading-relaxed text-gray-800 whitespace-pre-line px-4">
-                  {monthlyVerse.content}
-                </div>
-                
-                <div className="text-base font-medium text-gray-600 border-t pt-4">
-                  {monthlyVerse.reference}
-                </div>
-              </div>
-
-              {/* Copy Button */}
-              <div className="flex justify-center mt-6">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopy}
-                  className="bg-white/50 hover:bg-white/70 border-gray-200"
+              <div className="text-center space-y-3">
+                <div
+                  className="text-sm sm:text-base leading-relaxed px-2"
+                  style={{
+                    color: 'var(--ink)',
+                    // 엑셀 줄바꿈은 무시하고 띄어쓰기만 살려 자연스럽게 흐르게 하되,
+                    // 한글 단어 중간에서 줄이 끊기지 않도록 keep-all
+                    whiteSpace: 'normal',
+                    wordBreak: 'keep-all',
+                  }}
                 >
-                  <Copy className="w-4 h-4 mr-2" />
-                  복사
-                </Button>
+                  {monthlyVerse.content.replace(/\s+/g, ' ').trim()}
+                </div>
+
+                <div className="flex items-center justify-center gap-3 border-t pt-3" style={{ borderColor: 'var(--border-soft)' }}>
+                  <span className="text-sm font-medium" style={{ color: 'var(--ink-soft)' }}>
+                    {monthlyVerse.reference}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopy}
+                    className="h-7 px-2"
+                    style={{ background: 'var(--surface-muted)', color: 'var(--ink-soft)', borderColor: 'var(--border-soft)' }}
+                  >
+                    <Copy className="w-3.5 h-3.5 mr-1" />
+                    <span className="text-xs">복사</span>
+                  </Button>
+                </div>
               </div>
             </motion.div>
           ) : (

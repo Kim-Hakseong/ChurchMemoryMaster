@@ -19,6 +19,7 @@
   "dependencies": {
     "@capacitor-community/media": "^8.0.1",
     "@capacitor/android": "^7.4.2",
+    "@capacitor/app": "^7.1.0",
     "@capacitor/cli": "^7.4.2",
     "@capacitor/core": "^7.4.2",
     "@capacitor/filesystem": "^7.1.2",
@@ -71,6 +72,7 @@
     "firebase": "^10.12.4",
     "framer-motion": "^11.13.1",
     "google-auth-library": "^9.14.1",
+    "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.453.0",

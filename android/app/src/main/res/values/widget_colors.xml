@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 앱 Primary (Teal) -->
+    <color name="app_primary">#0AAFAF</color>
+    <color name="app_primary_dark">#088C8C</color>
+    <color name="app_primary_light">#E0F7F7</color>
+
+    <!-- 유치부 (분홍) - Tailwind pink-600 (#DB2777) 일치 -->
+    <color name="pink_100">#FCE4EC</color>
+    <color name="pink_600">#DB2777</color>
+    <color name="pink_700">#C2185B</color>
+
+    <!-- 초등부 (파랑) - Tailwind blue-600 (#2563EB) 일치 -->
+    <color name="blue_100">#E3F2FD</color>
+    <color name="blue_600">#2563EB</color>
+    <color name="blue_700">#1976D2</color>
+
+    <!-- 중고등부 (초록) - Tailwind green-600 (#16A34A) 일치 -->
+    <color name="green_100">#E8F5E9</color>
+    <color name="green_600">#16A34A</color>
+    <color name="green_700">#388E3C</color>
+
+    <!-- 텍스트 -->
+    <color name="text_primary">#1F2937</color>
+    <color name="text_secondary">#6B7280</color>
+    <color name="text_muted">#9CA3AF</color>
+
+    <!-- 배경 -->
+    <color name="section_bg">#F9FAFB</color>
+    <color name="section_accent">#E0F7F7</color>
+</resources>
+

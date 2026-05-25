@@ -23,3 +23,6 @@ ios/Pods/
 *.map
 coverage/
 .env*
+# local references & debug snippets
+참고사진/
+clear-storage.js

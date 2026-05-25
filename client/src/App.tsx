@@ -1,4 +1,5 @@
 import { Switch, Route } from "wouter";
+import { ThemeProvider } from "next-themes";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -13,10 +14,16 @@ import AgeGroup from "@/pages/age-group";
 import MonthlyVerse from "@/pages/monthly-verse";
 import SettingsPage from "@/pages/settings";
 import SplashPage from "@/pages/splash";
+import VerseOverview from "@/pages/verse-overview";
+import BookmarksPage from "@/pages/bookmarks";
+import MyProgressPage from "@/pages/my-progress";
+import BadgesPage from "@/pages/badges";
 import SplashScreen from "@/components/splash-screen";
 import ScrollToTop from "@/components/scroll-to-top";
+import ErrorBoundary from "@/components/error-boundary";
 import { useEffect, useState } from "react";
 import { rescheduleFromLocalStorage } from "@/lib/notifications";
+import { updateAllWidgetData } from "@/lib/widget-data";
 
 function Router() {
   return (
@@ -31,6 +38,10 @@ function Router() {
       <Route path="/calendar" component={Calendar} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/splash" component={SplashPage} />
+      <Route path="/verse-overview/:ageGroup" component={VerseOverview} />
+      <Route path="/bookmarks" component={BookmarksPage} />
+      <Route path="/my-progress" component={MyProgressPage} />
+      <Route path="/badges" component={BadgesPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -189,6 +200,9 @@ function App() {
         // 알림 스케줄 재등록 (앱 시작/재시작 시)
         await rescheduleFromLocalStorage();
         
+        // 위젯 데이터 업데이트 (앱 시작 시)
+        await updateAllWidgetData();
+        
         console.log('🎉 앱 초기화 완료');
         
       } catch (error) {
@@ -210,18 +224,22 @@ function App() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="w-full min-h-screen bg-white relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none" style={{background: 'linear-gradient(135deg, hsl(251, 82%, 67%, 0.05), transparent, hsl(166, 73%, 45%, 0.05))'}}></div>
-          <div className="pb-20">
-            <ScrollToTop />
-            <Router />
-          </div>
-          <Toaster />
-        </div>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="cm_theme">
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <div className="w-full min-h-screen relative overflow-hidden" style={{ background: 'var(--page-bg)', color: 'var(--ink)' }}>
+              <div className="ambient-glow-layer"></div>
+              <div className="relative z-10" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)' }}>
+                <ScrollToTop />
+                <Router />
+              </div>
+              <Toaster />
+            </div>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
