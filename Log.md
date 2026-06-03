@@ -1665,3 +1665,93 @@ android/app/src/main/java/com/church/memory/app/
 
 **문서 갱신**: 2026-05-23
 **작성**: Claude Code 세션 (v2.6 디자인 + v1.0 출시 준비 라운드)
+
+---
+
+## 18. 출시 준비 — Play Console 등록 & iOS 이전 준비 (2026-06-03)
+
+### 18-1. iOS 이전 준비
+- 작업 PC → Mac mini M4(기본형, 16GB/256GB)로 이전 결정. Xcode 로컬 빌드로 실기기 테스트 후 앱스토어 발행 시나리오 확정.
+- 현재 PC의 미커밋 변경 132개 파일(+14,511/-4,453) 정리 후 push.
+  - `참고사진/`(21MB 로컬 자료), `clear-storage.js`(디버그 스니펫) → `.gitignore` 추가로 제외.
+  - 안드로이드 더미 패키지(v4~v15) 12개 삭제, 위젯 3종 및 새 페이지/컴포넌트 다수 추가 반영.
+  - 커밋: `4b7629e [feat] 안드로이드 최적화 및 iOS 이전 준비`.
+- iOS 네이티브 폴더 부재 확인 — `ios/App.xcworkspace`, `Podfile`, `Info.plist` 모두 git에 없음. 이는 정상(GitHub Actions에서 매번 `rm -rf ios && npx cap add ios`로 재생성하는 구조).
+- Mac mini 진행 절차 안내:
+  ```bash
+  npm ci && npm run build
+  rm -rf ios && npx cap add ios && npx cap sync ios
+  node scripts/generate-ios-icons.cjs
+  /usr/libexec/PlistBuddy -c 'Add :NSPhotoLibraryAddUsageDescription string "..."' ios/App/App/Info.plist
+  cd ios/App && pod install && open App.xcworkspace
+  ```
+
+### 18-2. Google Play Console 앱 등록 진행
+- 개발자 인증 완료, 앱 만들기 단계 진입.
+- 앱 메타데이터:
+  - **앱 이름**: `교회학교 암송 수첩` (JBCH 브랜드명 제거 결정)
+  - **패키지 이름**: `com.church.memory.app` (코드와 일치, 평생 변경 불가)
+  - 기본 언어 한국어, 무료, 앱
+- Android Studio에서 **Generate Signed App Bundle (AAB)** 진행.
+  - 새 keystore 생성: `church-memory-release.jks`
+  - 인증서 정보에서 JBCH 표기 제거 (Organization 등은 `Church Memory App` 등으로)
+  - **백업 필수** 강조: keystore 파일 + 비밀번호 3개 분실 시 같은 패키지명으로 영원히 업데이트 불가.
+- AAB 빌드 완료.
+
+### 18-3. 개인정보처리방침 작성 & 호스팅
+- `docs/privacy-policy.html` + `docs/index.html` 신규 작성, GitHub Pages 호스팅용.
+- 내용 핵심: **외부 서버 전송 없음**, 모든 데이터(진도/북마크/배지 등) 로컬 저장만, 광고/분석 SDK 없음.
+- 권한 4종(인터넷/알림/사진/마이크) 각각 용도 명시.
+- 연락처: `makseong@gmail.com`
+- 커밋: `2ae96ce [docs] 개인정보처리방침 페이지 추가`.
+- URL (Pages 활성화 후): `https://kim-hakseong.github.io/ChurchMemoryMaster/privacy-policy.html`
+
+### 18-4. 스토어 설명문 초안 작성
+- **짧은 설명** (80자 이내): "교회학교 친구들을 위한 암송 수첩. 연령별 말씀, 진도 추적, 위젯, 알림으로 매일 꾸준히."
+- **자세한 설명** (약 700자): 9개 주요 기능 (연령별 말씀/이번달 말씀/진도 추적/배지·포인트/북마크/플래시카드/캘린더/알림/위젯/캡처·공유), 개인정보 보호 강조, 추천 사용자 그룹, 연락처 포함.
+
+### 18-5. 신규 개인 계정 12명/14일 정책 발견
+- **2023년 11월부터** Google이 신규 **개인(Personal) 개발자 계정**에 강제하는 규정 확인:
+  - 비공개(Closed) 테스트 트랙에서 **12명 이상 옵트인 + 14일 연속** 후 "프로덕션 액세스 신청" 가능
+  - 검토 1~7일 → 통과 시 프로덕션 출시 가능
+- 면제 대상: 2023년 11월 이전 등록 계정, 기업(Organization) 계정
+- 공개(Open) 테스트도 이 요구사항 충족 못함 확인.
+
+### 18-6. 사업자 계정 전환 결정 (간이사업자 활용)
+- 사용자가 기존 **간이사업자** 보유 중. Organization 계정 등록 가능 확인.
+- 결정 근거:
+  - 12명/14일 룰 면제 (즉시 출시 가능)
+  - **사업 경비 처리** 가능: Mac mini M4 / Apple Developer $99 / Google Play $25 / 노트북 / 인터넷 등
+  - 향후 여러 앱 계속 개발 예정 → 장기적으로 무조건 유리
+  - 간이과세 매출로 세금 처리 깔끔
+- 필요 절차:
+  1. **D-U-N-S 번호 무료 신청** (한국기업데이터 NICE D&B, 1~4주 소요)
+  2. 새 Google Play 계정 등록 ($25 추가) — 기존 개인 계정은 Organization으로 변환 불가
+  3. Apple Developer도 동일하게 Organization으로 등록 권장
+- **현재 앱 처리 전략 (결정 보류)**:
+  - 옵션 1 (권장): 현재 개인 계정에서 단톡방으로 12명 모집 → 14일 후 출시 → 사업자 계정으로 앱 이전(Transfer, 1~2주)
+  - 옵션 2: D-U-N-S 받을 때까지 한 달 대기 후 사업자 계정으로 첫 출시 (느리지만 깔끔)
+
+### 18-7. 다음 세션에서 이어갈 작업
+- [ ] D-U-N-S 번호 신청 (무료, 한국기업데이터 사이트)
+- [ ] 현재 앱 출시 전략 최종 결정 (옵션 1 vs 옵션 2)
+- [ ] GitHub Pages 활성화 후 개인정보처리방침 URL 동작 확인
+- [ ] Play Console 비공개 테스트 트랙에 AAB 업로드 (옵션 1 시)
+- [ ] 스토어 등록정보 채우기:
+  - 그래픽 이미지 1024×500 PNG 제작 (필수)
+  - 휴대전화 스크린샷 최소 2장 캡처
+  - 앱 콘텐츠 정책 항목 (개인정보처리방침 URL, 콘텐츠 등급 설문, 데이터 보안 양식 등)
+- [ ] Mac mini M4 환경 세팅 (Xcode, Node 20, CocoaPods, fastlane)
+- [ ] iOS 실기기 빌드 테스트 (본인 아이폰)
+- [ ] Apple Developer 사업자 계정 등록 (사업자 계정 결정 시)
+
+### 18-8. 트러블슈팅 메모
+- **Google Play 패키지 이름 한글 불가**: `com.example.myapp` 형식 강제. 코드의 `applicationId`와 100% 일치 필수, 한 번 등록 후 변경 불가.
+- **공개(Open) 테스트로 우회 시도는 무의미**: 신규 개인 계정의 14일 룰은 비공개(Closed) 테스트만 충족 인정.
+- **개인 계정 → Organization 계정 직접 변환 불가**: 새 계정 별도 등록 후 앱 이전 신청 필요. 이전 시 데이터/리뷰/통계 유지.
+- **Mac mini 256GB SSD 디스크 압박 예상**: Xcode ~40GB + 시뮬레이터 ~15GB + Pods/node_modules ~5GB. 시뮬레이터는 최신 iOS 1개만 유지 권장.
+
+---
+
+**문서 갱신**: 2026-06-03
+**작성**: Claude Code 세션 (Play Console 등록 + 사업자 계정 전환 검토 라운드)
