@@ -35,3 +35,10 @@ coverage/
 # local references & debug snippets
 참고사진/
 clear-storage.js
+# 안드로이드 서명 키 — 유출되면 앱을 영구히 잃는다. 절대 커밋 금지
+*.jks
+*.keystore
+keystore.properties
+android/keystore.properties
+# App Store Connect API 키
+*.p8
