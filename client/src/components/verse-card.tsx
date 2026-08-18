@@ -1,10 +1,18 @@
 import { Calendar, Bookmark, Copy, GraduationCap as FlashcardIcon } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 import { useToast } from "@/hooks/use-toast";
 import type { Verse } from "@shared/schema";
 import { useState, useEffect } from "react";
 import { toggleBookmark, isBookmarked } from "@/lib/bookmarks";
 import FlashcardModal from "@/components/flashcard-modal";
 import { getFontSize, getFontSizeClass, type AgeGroup } from "@/lib/font-size-settings";
+
+// 플랫폼별 본문 배율 (var(--verse-scale) 미적용 케이스 대비 JS에서 직접 계산)
+const IS_IOS = Capacitor.getPlatform() === 'ios';
+// 본문(size): iOS만 일정 비율로 키움. 너무 키우면 자동 축소 단계의 max값도 같이 커져
+// 카드 밖으로 넘침. 자동 축소가 자연스럽게 작동하는 범위로 보수적으로 설정.
+const VERSE_SCALE = IS_IOS ? 1.20 : 1;
+const LESSON_SCALE = IS_IOS ? 1.25 : 1;
 
 export type ContentScale = 'relaxed' | 'normal' | 'dense';
 
@@ -48,6 +56,24 @@ function getLessonLabel(lessonName?: string | null): string | null {
   if (!lessonName) return null;
   const m = lessonName.match(/^\s*(\d+)\s*과/);
   return m ? `${m[1]}과` : null;
+}
+
+// 플랫폼별 폰트 보정 — clamp() 안의 px/dvh 값에 직접 배율을 곱해서 새 문자열 생성.
+// (CSS calc/var 방식은 일부 환경에서 적용 안 되는 케이스가 있어 JS 직접 계산으로 전환)
+// 자수 분기/축소 단계는 함수 본체에 그대로 유지됨.
+function scaleNumericUnits(s: string, scale: number): string {
+  if (scale === 1) return s;
+  return s.replace(/(\d+(?:\.\d+)?)(px|dvh)/g, (_, n, unit) => {
+    const v = parseFloat(n) * scale;
+    return `${v.toFixed(2)}${unit}`;
+  });
+}
+function applyFontScale<T extends { size: string; lessonSize: string }>(s: T): T {
+  return {
+    ...s,
+    size: scaleNumericUnits(s.size, VERSE_SCALE),
+    lessonSize: scaleNumericUnits(s.lessonSize, LESSON_SCALE),
+  };
 }
 
 // 균등 모드(3장 동일 크기)용 자동 폰트 — 가독성 위해 한 단계 더 크게 잡고
@@ -129,7 +155,7 @@ export default function VerseCard({ verse, weekType, onShare, compact = false, a
   // 균등 모드 — 3장 동일 크기, 본문 전체 표시(축약 X), 글자수 자동 폰트
   // ============================================================
   if (equalMode) {
-    const ecs = getEqualContentSize(verse?.content?.length ?? 0);
+    const ecs = applyFontScale(getEqualContentSize(verse?.content?.length ?? 0));
     return (
       <>
       <div
@@ -285,7 +311,7 @@ export default function VerseCard({ verse, weekType, onShare, compact = false, a
   // ============================================================
   // 액티브 카드 (이번 주) — 부서 글로우 + 북마크 + 본문(자동 폰트) + 복사
   // ============================================================
-  const cs = getActiveContentSize(verse?.content?.length ?? 0);
+  const cs = applyFontScale(getActiveContentSize(verse?.content?.length ?? 0));
 
   return (
     <>

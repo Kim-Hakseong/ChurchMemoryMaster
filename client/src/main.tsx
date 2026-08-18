@@ -3,6 +3,10 @@ import { Capacitor } from '@capacitor/core';
 import App from "./App";
 import "./index.css";
 
+// 플랫폼별 스타일 토글 — iOS는 폰트/Safe Area 등 별도 보정
+const __platform = Capacitor.getPlatform();
+document.documentElement.classList.add(`platform-${__platform}`);
+
 // PWA Service Worker: 네이티브(Android/iOS)에서는 등록하지 않고, 기존 등록/캐시는 정리
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

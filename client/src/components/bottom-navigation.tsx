@@ -1,5 +1,8 @@
 import { Baby, Users, GraduationCap, Calendar, Home } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { Capacitor } from "@capacitor/core";
+
+const IS_IOS = Capacitor.getPlatform() === 'ios';
 
 export default function BottomNavigation() {
   const [location] = useLocation();
@@ -27,6 +30,10 @@ export default function BottomNavigation() {
           padding: '6px',
           borderRadius: '32px',
           gap: '2px',
+          // iOS는 비율을 유지한 채 1.2배. transform-origin이 top이라 상단 위치는
+          // 고정되고 박스가 아래쪽으로 커지면서 자연스럽게 더 하단으로 내려감.
+          transform: IS_IOS ? 'scale(1.2)' : undefined,
+          transformOrigin: IS_IOS ? 'top center' : undefined,
         }}
       >
         {tabs.map((tab) => {

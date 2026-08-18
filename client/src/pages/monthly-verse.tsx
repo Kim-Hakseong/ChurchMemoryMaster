@@ -60,10 +60,11 @@ export default function MonthlyVerse() {
     <div className="min-h-screen flex flex-col pb-16">
       {/* Header */}
       <header
-        className="relative z-10 px-4 sm:px-6 pt-8 pb-2"
+        className="relative z-10 px-4 sm:px-6 pb-2"
         style={{
           background: 'var(--page-bg)',
           borderBottom: '1px solid var(--border-soft)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 32px)',
         }}
       >
         <div className="max-w-4xl mx-auto">

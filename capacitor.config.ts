@@ -16,6 +16,8 @@ const config: CapacitorConfig = {
     webContentsDebuggingEnabled: true,
     appendUserAgent: 'ChurchMemoryApp/1.0'
   }
+  // iOS Widget Extension과의 데이터 공유는 AppDelegate.swift의 syncWidgetData()가 담당.
+  // (@capacitor/preferences의 group 옵션은 App Group이 아니라 단순 키 prefix용이라 위젯이 못 읽음)
 };
 
 export default config;

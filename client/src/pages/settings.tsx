@@ -77,7 +77,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <div className="max-w-xl mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between mt-6">
           <Link href="/home">

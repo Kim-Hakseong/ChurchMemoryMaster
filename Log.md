@@ -1665,3 +1665,182 @@ android/app/src/main/java/com/church/memory/app/
 
 **문서 갱신**: 2026-05-23
 **작성**: Claude Code 세션 (v2.6 디자인 + v1.0 출시 준비 라운드)
+
+---
+
+## 18. iOS 로컬 Xcode 빌드 체계 전환 + WidgetKit 위젯 + iOS 디테일 보정 (2026-05-25 ~ 2026-05-31)
+
+플레이스토어 출시(섹션 17) 이후 App Store 출시 준비. 그동안 iOS 빌드는 GitHub Actions(fastlane match) 로만 돌렸고 로컬에 `.xcodeproj` 가 없는 상태였음. 본인 iPhone 에서 직접 서명·테스트·아카이브하기 위해 로컬 Xcode 빌드 체계로 전환하고, iOS WKWebView 에서만 드러나는 UX 문제(Safe Area / 작은 폰트 / 한글 IME / 캡처 / 네비 비율) 를 전수 보정. 마지막으로 안드로이드 홈 위젯과 동등한 iOS WidgetKit 위젯을 구현.
+
+### 18-1. iOS 로컬 Xcode 빌드 체계 전환 (GitHub Actions 폐기)
+
+GitHub Actions 워크플로우(`ios-build.yml`, `ios-adhoc.yml`, `ios-unsigned.yml`) 는 매 빌드마다 `rm -rf ios && npx cap add ios` 로 iOS 폴더를 통째 재생성하는 구조였음. 이래서 로컬에 `App.xcodeproj` 가 없었고, 서명·capability 도 fastlane match 가 원격에서 관리.
+
+**전환 작업**:
+- `npm run build` (sharp 의존성 추가 설치 필요), `npx cap add ios && npx cap sync ios` 로 iOS 프로젝트 로컬 재생성.
+- `ios/App/App/Info.plist` 에 `NSPhotoLibraryAddUsageDescription` / `NSPhotoLibraryUsageDescription` 주입(워크플로우와 동일).
+- `scripts/generate-ios-icons.cjs` 로 앱 아이콘 생성.
+- `.gitignore` 에 `ios/App/Pods/`, `ios/DerivedData/`, `**/xcuserdata/`, `*.xcuserstate` 등 Xcode 산출물 추가.
+- iOS 워크플로우 3종 삭제.
+- iOS 폴더 통째 git 커밋(`ccdf1bb`). 이후 Xcode UI 에서 Signing & Capabilities → Automatically manage signing + 본인 Apple Developer Team 으로 자동 서명.
+
+### 18-2. Safe Area / Dynamic Island 처리
+
+iOS 빌드 후 첫 실행 시 페이지 헤더가 Dynamic Island 영역과 겹쳤음.
+
+**18-2-1. viewport 설정** — `client/index.html` 의 viewport 메타에 `viewport-fit=cover` 추가 → WebView 가 safe-area 영역까지 채워 그릴 수 있게.
+
+**18-2-2. fixed 헤더 5종 + 일반 flow 페이지 3종 padding 보정**
+
+모든 페이지가 `fixed top-0` 헤더로 떠 있어서 App.tsx 부모의 padding-top 으로는 못 밀어줌. 각 페이지의 헤더와 main 영역에 직접 `env(safe-area-inset-top)` 을 더함.
+
+| 파일 | 헤더 paddingTop | main marginTop |
+|------|----------------|----------------|
+| `pages/home.tsx` | `safe-top + 24px` | `safe-top + 58px` |
+| `pages/age-group.tsx` | `safe-top + 24px` | `safe-top + 58px` |
+| `pages/calendar.tsx` | `safe-top + 24px` | `safe-top + 64px` (paddingTop) |
+| `pages/bookmarks.tsx` | `safe-top + 40px` | `safe-top + 96px` |
+| `pages/verse-overview.tsx` | `safe-top + 40px` | `safe-top + 144px` |
+| `pages/monthly-verse.tsx` | `safe-top + 32px` | — |
+
+일반 flow 페이지(`pages/settings.tsx`, `pages/my-progress.tsx`, `pages/badges.tsx`) 는 외부 wrapper `<div className="min-h-screen">` 에 `style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}` 만 추가.
+
+`home.tsx` / `age-group.tsx` 의 카드 영역 `height: calc(100dvh - 130px)` 도 `- env(safe-area-inset-top) - env(safe-area-inset-bottom)` 을 추가로 빼서 카드가 화면을 안 벗어나게.
+
+`App.tsx` outer div 는 `paddingTop` 을 두지 않음(fixed 헤더에 안 먹힘) — `paddingBottom: calc(env(safe-area-inset-bottom, 0px) + 96px)` 만 유지.
+
+### 18-3. iOS 폰트 보정 (전역 + 본문 동적 스케일)
+
+iOS WKWebView 에서 동일한 px/dvh 가 안드로이드보다 작게 렌더링되어 두 단계 처리.
+
+**18-3-1. 전역 root font-size 스케일**
+
+`client/src/main.tsx` — `document.documentElement.classList.add('platform-' + Capacitor.getPlatform())` 로 `<html>` 에 `platform-ios` / `platform-android` / `platform-web` 클래스 부여.
+
+`client/src/index.css`:
+```css
+html { --font-scale: 1; --verse-scale: 1; }
+html.platform-ios {
+  --font-scale: 1.25;
+  --verse-scale: 1.80;  /* 실제 본문 적용은 18-3-2의 JS 직접 계산으로 */
+  font-size: calc(16px * var(--font-scale));
+  -webkit-text-size-adjust: 100%;
+}
+```
+
+`font-size: calc(16px * 1.25)` = 20px → 모든 rem 기반 텍스트가 1.25배.
+
+**18-3-2. 암송 본문 동적 폰트 — JS 직접 계산**
+
+초기 구현은 `s.replace(...)` 로 `calc($1$2 * var(--font-scale) * var(--verse-scale))` 패턴 생성. 하지만 **iOS WKWebView 에서 calc() 안에 var() 두 개 연속 곱셈이 일부 환경에서 무효화** 되어 본문 폰트가 안 커지는 현상. JS 에서 직접 px/dvh 값에 배율을 곱해 새 문자열을 생성하는 방식으로 전환.
+
+`client/src/components/verse-card.tsx` (이번 주/지난 주/다음 주 카드 컴포넌트):
+```ts
+const IS_IOS = Capacitor.getPlatform() === 'ios';
+const VERSE_SCALE = IS_IOS ? 1.20 : 1;
+const LESSON_SCALE = IS_IOS ? 1.25 : 1;
+
+function scaleNumericUnits(s: string, scale: number): string {
+  if (scale === 1) return s;
+  return s.replace(/(\d+(?:\.\d+)?)(px|dvh)/g, (_, n, unit) =>
+    `${(parseFloat(n) * scale).toFixed(2)}${unit}`
+  );
+}
+function applyFontScale<T extends { size: string; lessonSize: string }>(s: T): T {
+  return { ...s, size: scaleNumericUnits(s.size, VERSE_SCALE), lessonSize: scaleNumericUnits(s.lessonSize, LESSON_SCALE) };
+}
+```
+
+`getEqualContentSize()`, `getActiveContentSize()` 의 자수 임계값(30/50/80/120/170/230) 과 단계별 축소 로직은 그대로 유지. 절대값만 비례 증가.
+
+`client/src/pages/home.tsx` (메인화면 부서별 3장 카드) 도 별도 함수 `getHomeCardScale()` 을 쓰므로 동일한 wrapper `applyHomeScale()` 를 추가하고 3개 호출부(`kindergarten/elementary/youth`) 에 적용.
+
+배율 튜닝 히스토리: 1.18 → 1.80(미적용) → 2.25(JS, 너무 큼) → 1.55 → 1.30 → **1.20** 으로 수렴.
+
+### 18-4. iOS-only 세부 보정
+
+- **하단 네비게이션 1.2배** (`components/bottom-navigation.tsx`): `transform: 'scale(1.2)'` + `transformOrigin: 'top center'` 로 비율 유지 + 상단 위치 고정 + 박스가 아래로 1.2배 확장.
+- **`age-group.tsx` 강조 모드 카드 균형**: 지난주/다음주 카드 height `108px → 132px` 로 키워, 가운데 "이번 주" 카드가 차지하는 공간을 줄여 균형 회복.
+- **iOS 캡처 버튼 비활성화** (`components/capture-button.tsx`): `html-to-image` 가 WKWebView 의 `viewport-fit=cover` + fixed 헤더 좌표계와 어긋나 결과 이미지가 왜곡됨. iOS 면 컴포넌트가 `null` 반환. Android/Web 은 그대로.
+- **한글 IME Input 플랫폼 분기** (`components/ui/input.tsx`): 기존 컴포넌트는 Android WebView 한글 조합 문제 해결을 위해 `defaultValue + onInput` uncontrolled 패턴이었음 — iOS WKWebView 에서는 오히려 검색 입력값이 state 와 동기화 안 되어 검색이 안 됨. `IS_ANDROID` 분기로 Android 는 기존 우회 유지, iOS/Web 은 표준 `value + onChange` controlled. `verse-overview.tsx` 의 검색뿐 아니라 모든 입력 폼에 영향.
+
+### 18-5. iOS Widget Extension (WidgetKit) 구현
+
+안드로이드 위젯(`VerseWidgetProvider.kt`, `VerseLargeWidgetProvider.kt`) 과 동등한 기능을 iOS WidgetKit + SwiftUI 로 신규 작성.
+
+**18-5-1. Widget Extension 타겟 추가 (Xcode UI)**
+- Xcode `File > New > Target > Widget Extension`, Product Name: `ChurchMemoryWidget`, Include Configuration Intent ✓.
+- App target + Widget Extension target 양쪽에 App Group capability 추가: `group.com.church.memory.app`.
+- 자동 생성된 `ChurchMemoryWidgetLiveActivity.swift` 는 사용 안 함(삭제 또는 그대로 둬도 빌드 OK).
+
+**18-5-2. Widget Swift 코드** (`ios/App/ChurchMemoryWidget/ChurchMemoryWidgetControl.swift`)
+
+> 파일명이 `Control` 인 이유: 사용자가 자동 생성된 `ChurchMemoryWidget.swift` 를 실수로 삭제한 뒤, Xcode 16 이 기본 포함한 `Control.swift` 의 내용을 통째로 교체하는 방식으로 복구. Swift 는 파일명과 내부 타입명이 일치할 필요 없어서 동작에는 영향 없음.
+
+한 파일에 통합된 구성:
+- `WidgetVerseData` / `WidgetData` Codable struct — 메인 앱이 저장하는 JSON 과 동일 shape (`{ ageGroup, lastWeek, thisWeek, nextWeek, lastUpdated }`).
+- `AgeGroupOption: AppEnum` — `kindergarten/elementary/youth` 와 각 부서 accent color (안드로이드 widget_colors.xml 과 동일 hex: pink `#DB2777`, blue `#2563EB`, green `#16A34A`).
+- `VerseWidgetConfigIntent: WidgetConfigurationIntent` — 위젯 길게 눌러 부서 선택.
+- `VerseTimelineProvider: AppIntentTimelineProvider` — App Group UserDefaults 에서 JSON 읽어 `Timeline` 생성. 1시간 주기 갱신(`policy: .after(...)`) — 안드로이드 위젯 update period 와 동일.
+- `MediumWidgetView` (systemMedium 4×2): 이번 주 한 구절. 자수 기반 동적 폰트 분기(`mediumContentFont(for:)` — 50 미만 14sp/4줄, 200+ 10sp/9줄) + `.minimumScaleFactor(0.6)` 로 카드 안에 다 들어가도록.
+- `LargeWidgetView` (systemLarge 4×5): 지난/이번/다음 주 3개 섹션. "이번 주" 섹션은 accent color 배경 + 다른 섹션 대비 2줄 더 허용.
+- `ChurchMemoryWidget: Widget` + `@main ChurchMemoryWidgetBundle: WidgetBundle` — `supportedFamilies([.systemMedium, .systemLarge])`.
+
+iOS 17+ 의 `AppIntentConfiguration` 사용 — Widget Extension target Deployment Target 은 iOS 17.0 이상.
+
+**18-5-3. 데이터 흐름 (메인 앱 → App Group UserDefaults → Widget)**
+
+핵심 발견: **`@capacitor/preferences` 의 `group` 옵션은 App Group 이 아니라 단순 키 prefix** (소스 확인: `node_modules/@capacitor/preferences/ios/Sources/PreferencesPlugin/Preferences.swift`). 항상 `UserDefaults.standard` 에 저장하고, group 값을 키 prefix(`<group>.`) 로만 사용. 또한 `capacitor.config.ts` 의 `plugins.Preferences.group` 은 native 측에서 자동 적용되지 않음 — JS 에서 `Preferences.configure({group})` 를 명시 호출해야 prefix 가 바뀜.
+
+→ 처음에 시도한 `capacitor.config.ts` 의 `Preferences.group` 설정은 효과 없어 제거. 대신 **AppDelegate.swift 에서 메인 앱이 활성화될 때마다 `UserDefaults.standard` 의 `CapacitorStorage.widget_data_*` 키를 App Group UserDefaults 의 `widget_data_*` 키로 복사**.
+
+`ios/App/App/AppDelegate.swift` 추가 로직:
+```swift
+import WidgetKit
+// ...
+private let appGroupID = "group.com.church.memory.app"
+private let capacitorPrefix = "CapacitorStorage."
+private let widgetDataKeys = ["widget_data_kindergarten", "widget_data_elementary", "widget_data_youth"]
+
+private func syncWidgetData() {
+    let standard = UserDefaults.standard
+    guard let groupDefaults = UserDefaults(suiteName: appGroupID) else { return }
+    var didChange = false
+    for key in widgetDataKeys {
+        let value = standard.string(forKey: capacitorPrefix + key) ?? standard.string(forKey: key)
+        guard let value = value else { continue }
+        if groupDefaults.string(forKey: key) != value {
+            groupDefaults.set(value, forKey: key); didChange = true
+        }
+    }
+    if didChange, #available(iOS 14.0, *) {
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+}
+private func scheduleWidgetSync() {
+    syncWidgetData()
+    DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in self?.syncWidgetData() }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in self?.syncWidgetData() }
+}
+```
+
+`didFinishLaunchingWithOptions` 와 `applicationDidBecomeActive` 양쪽에서 `scheduleWidgetSync()` 호출 — 즉시 + 3초 + 8초 세 번. JS 의 `updateAllWidgetData()` 가 비동기로 Preferences 에 저장하는 시간을 확보.
+
+**18-5-4. 엔타이틀먼트**
+- `ios/App/App/App.entitlements` 와 `ios/App/ChurchMemoryWidgetExtension.entitlements` 양쪽에 `com.apple.security.application-groups: ["group.com.church.memory.app"]` 등록(Xcode capability 자동 생성).
+
+### 18-6. 트러블슈팅 메모
+
+- **GitHub Actions iOS 빌드와 로컬 Xcode 빌드의 공존 불가**: 워크플로우가 매번 `rm -rf ios` 라서 둘 다 유지하려면 `ios/` 를 .gitignore 하고 두 환경의 서명/Bundle ID 가 같아야 함. 본인 폰 테스트 + App Store 둘 다 로컬에서 처리할 거라 워크플로우 전부 삭제 선택.
+- **`viewport-fit=cover` 추가 시 dvh 의 의미**: 100dvh = 전체 화면(safe-area 포함). 그래서 `calc(100dvh - 130px)` 같은 reservation 은 safe-area-top + safe-area-bottom 도 추가로 빼야 카드 영역이 실제 안전 영역 안에 들어감.
+- **`@capacitor/preferences` group 옵션의 함정**: docs 만 보면 App Group UserDefaults 처럼 들리지만 실제로는 `UserDefaults.standard` + 키 prefix. iOS Widget Extension 과 데이터 공유는 별도 native 코드(AppDelegate 또는 커스텀 plugin) 필요.
+- **`AppIntentConfiguration` 은 iOS 17+ 전용**: 16 이하 지원하려면 `IntentConfiguration` (legacy AppIntents) 으로 폴백 필요. 이번 라운드는 17+ 만 지원.
+- **`html-to-image` 의 iOS 한계**: SVG `foreignObject` 방식인데 WKWebView 의 `viewport-fit=cover` 환경에서 fixed 요소 좌표계가 어긋나 캡처 결과의 위쪽이 잘리고 왼쪽에 흰 패딩이 생김. 근본 해결은 큰 작업이라 이번 라운드는 iOS 만 캡처 버튼 자체를 숨겨 사용자 노출 차단.
+- **CSS `calc(var() * var())` 의 iOS WKWebView 적용 불일치**: `calc(15px * var(--font-scale) * var(--verse-scale))` 가 일부 케이스에서 무효화되어 fontSize 가 default 로 떨어짐. CSS 변수 대신 JS 에서 직접 px/dvh 값을 곱해 새 clamp 문자열을 생성하는 방식이 안정적.
+- **Xcode 16 자동 생성 위젯 파일 구성**: Widget Extension target 생성 시 `ChurchMemoryWidget.swift` 외에도 `ChurchMemoryWidgetControl.swift` (iOS 18 Control Center Widget), `ChurchMemoryWidgetLiveActivity.swift` (Live Activity) 가 자동 포함. 사용 안 하면 삭제하거나 그대로 둬도 빌드 OK (`@main` 충돌만 피하면 됨).
+- **앱 시작 ~ 위젯 첫 갱신 타이밍**: AppDelegate `didFinishLaunching` 시점엔 JS 가 아직 시작 안 함. `applicationDidBecomeActive` + 3·8초 지연 호출로 JS 의 `updateAllWidgetData()` 가 Preferences 에 저장하는 시간을 확보. 그래도 첫 설치 직후엔 위젯이 한 번 sample 데이터를 보여줄 수 있음 — 앱을 한 번 열었다가 위젯 화면으로 돌아오면 갱신.
+
+---
+
+**문서 갱신**: 2026-05-31
+**작성**: Claude Code 세션 (iOS 빌드 체계 전환 + WidgetKit 위젯 + iOS 디테일 보정 라운드)

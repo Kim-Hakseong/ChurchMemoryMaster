@@ -113,10 +113,11 @@ export default function BookmarksPage() {
     <div className="min-h-screen relative pb-16">
       {/* 상단 고정 바 */}
       <header
-        className="fixed top-0 left-0 right-0 pt-10 pb-4 px-6 z-40"
+        className="fixed top-0 left-0 right-0 pb-4 px-6 z-40"
         style={{
           background: 'var(--page-bg)',
           borderBottom: '1px solid var(--border-soft)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 40px)',
         }}
       >
         <div className="flex items-center justify-between h-12">
@@ -140,7 +141,7 @@ export default function BookmarksPage() {
         </div>
       </header>
 
-      <main className="relative z-10 container mx-auto px-4 py-6 space-y-6 mt-24">
+      <main className="relative z-10 container mx-auto px-4 py-6 space-y-6" style={{ marginTop: 'calc(96px + env(safe-area-inset-top, 0px))' }}>
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="verse-card">
             <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--ink)' }}>

@@ -361,10 +361,11 @@ export default function Calendar() {
       
       {/* Header */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 pt-6 pb-1 shadow-sm"
+        className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 pb-1 shadow-sm"
         style={{
           background: 'var(--page-bg)',
           borderBottom: '1px solid var(--border-soft)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)',
         }}
       >
         <div className="flex items-center justify-between max-w-4xl mx-auto">
@@ -410,7 +411,7 @@ export default function Calendar() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 px-4 sm:px-6 py-4 pb-16 pt-16">
+      <main className="relative z-10 flex-1 px-4 sm:px-6 py-4 pb-16" style={{ paddingTop: 'calc(64px + env(safe-area-inset-top, 0px))' }}>
         <div className="max-w-4xl mx-auto space-y-6">
         {/* Month Navigation */}
         <div className="flex items-center justify-between mt-1.5 mb-2">

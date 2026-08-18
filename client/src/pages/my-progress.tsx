@@ -51,7 +51,7 @@ export default function MyProgressPage() {
   const displayLabel = isMonthly ? '이번 달 달성률' : '이번 주 달성률';
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-24" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <div className="max-w-xl mx-auto p-5 space-y-6">
         {/* 헤더 */}
         <div className="relative flex items-center justify-between mt-4">

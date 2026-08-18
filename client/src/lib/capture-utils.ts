@@ -31,13 +31,21 @@ export const captureScreen = async (): Promise<void> => {
     // DOM 업데이트 대기
     await new Promise(resolve => setTimeout(resolve, 50));
 
-    // html-to-image로 캡처 (SVG foreignObject → Canvas → PNG)
-    // fixed 요소도 브라우저가 직접 렌더링하므로 위치 정확
-    const dataUrl = await toPng(document.body, {
-      width: window.innerWidth,
-      height: window.innerHeight,
-      pixelRatio: 2,
+    // 캡처 대상: 앱 루트 컨테이너 (없으면 document.body 폴백)
+    // iOS는 safe-area/viewport-fit=cover 환경에서 window.innerWidth/Height가
+    // 실제 표시 영역과 어긋날 수 있어, 컨테이너의 boundingRect를 직접 사용
+    const target = (document.querySelector('[data-capture-root]') as HTMLElement) ?? document.body;
+    const rect = target.getBoundingClientRect();
+    const width = Math.round(rect.width);
+    const height = Math.round(rect.height);
+    const pixelRatio = Math.max(window.devicePixelRatio || 1, 2);
+
+    const dataUrl = await toPng(target, {
+      width,
+      height,
+      pixelRatio,
       cacheBust: true,
+      backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--page-bg').trim() || '#ffffff',
       filter: (node: HTMLElement) => {
         // data-capture-button 요소 제외
         if (node.hasAttribute?.('data-capture-button')) return false;

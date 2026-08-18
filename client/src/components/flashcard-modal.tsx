@@ -18,6 +18,11 @@ import {
 import type { Verse } from "@shared/schema";
 import { useProgress } from "@/hooks/use-progress";
 import PointsEarnedToast from "@/components/points-earned-toast";
+import { Capacitor } from "@capacitor/core";
+import { SpeechRecognition } from "@capacitor-community/speech-recognition";
+
+// WKWebView/Android WebView 에는 Web Speech API 가 없음 — 네이티브에서는 플러그인 사용
+const IS_NATIVE = Capacitor.isNativePlatform();
 
 interface FlashcardModalProps {
   open: boolean;
@@ -69,6 +74,15 @@ export default function FlashcardModal({ open, onOpenChange, verse }: FlashcardM
       setDifficulty('easy');
       reset();
     }
+  }, [open]);
+
+  // 모달이 닫히거나 언마운트될 때 네이티브 음성 인식 정리
+  useEffect(() => {
+    if (!IS_NATIVE) return;
+    if (open) return;
+    void SpeechRecognition.stop().catch(() => {});
+    void SpeechRecognition.removeAllListeners().catch(() => {});
+    setIsRecording(false);
   }, [open]);
 
   const reset = () => {
@@ -203,12 +217,92 @@ export default function FlashcardModal({ open, onOpenChange, verse }: FlashcardM
     setShowHints(newHints);
   };
 
-  // 음성 인식 시작
-  const handleStartRecording = async () => {
+  // 네이티브 음성 인식 (iOS SFSpeechRecognizer / Android SpeechRecognizer)
+  const startNativeRecording = async () => {
+    try {
+      const { available } = await SpeechRecognition.available();
+      if (!available) {
+        toast({
+          title: "음성 인식 불가",
+          description: "이 기기는 음성 인식을 지원하지 않습니다.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      let perm = await SpeechRecognition.checkPermissions();
+      if (perm.speechRecognition !== 'granted') {
+        perm = await SpeechRecognition.requestPermissions();
+      }
+      if (perm.speechRecognition !== 'granted') {
+        toast({
+          title: "권한 필요",
+          description: "설정에서 마이크·음성 인식 권한을 허용해주세요.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await SpeechRecognition.removeAllListeners();
+      await SpeechRecognition.addListener('partialResults', (data) => {
+        const text = data.matches?.[0];
+        if (text) setFullRecitationText(text);
+      });
+      await SpeechRecognition.addListener('listeningState', (data) => {
+        if (data.status === 'stopped') setIsRecording(false);
+      });
+
+      setIsRecording(true);
+      toast({
+        title: "음성 인식 시작 🎤",
+        description: "암송이 끝나면 마이크를 다시 눌러주세요.",
+      });
+
+      await SpeechRecognition.start({
+        language: 'ko-KR',
+        maxResults: 1,
+        partialResults: true,
+        popup: false,
+      });
+    } catch (error) {
+      console.error('네이티브 음성 인식 오류:', error);
+      setIsRecording(false);
+      toast({
+        title: "음성 인식 오류",
+        description: "음성 인식을 시작할 수 없습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopNativeRecording = async () => {
+    try {
+      await SpeechRecognition.stop();
+    } catch (error) {
+      console.error('음성 인식 중지 오류:', error);
+    }
+    setIsRecording(false);
+  };
+
+  // 마이크 버튼 토글 — 네이티브는 수동 종료, 웹은 자동 종료
+  const handleToggleRecording = async () => {
+    if (isRecording) {
+      if (IS_NATIVE) await stopNativeRecording();
+      return;
+    }
+    if (IS_NATIVE) {
+      await startNativeRecording();
+      return;
+    }
+    await handleStartWebRecording();
+  };
+
+  // 음성 인식 시작 (웹 — Web Speech API)
+  const handleStartWebRecording = async () => {
     try {
       // Web Speech API 확인
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      
+
       if (!SpeechRecognition) {
         toast({
           title: "음성 인식 불가",
@@ -517,10 +611,10 @@ export default function FlashcardModal({ open, onOpenChange, verse }: FlashcardM
         <Button
           variant="ghost"
           size="icon"
-          onClick={handleStartRecording}
-          disabled={isRecording}
+          onClick={handleToggleRecording}
+          disabled={isRecording && !IS_NATIVE}
           className={`absolute bottom-2 right-2 ${isRecording ? 'bg-red-100 text-red-600 animate-pulse' : ''}`}
-          title="음성으로 암송하기"
+          title={isRecording ? "음성 인식 중지" : "음성으로 암송하기"}
         >
           <Mic className={`w-5 h-5 ${isRecording ? 'text-red-600' : ''}`} />
         </Button>
@@ -537,7 +631,9 @@ export default function FlashcardModal({ open, onOpenChange, verse }: FlashcardM
 
       <div className="mt-4 p-3 bg-gray-50 rounded-lg">
         <p className="text-xs text-gray-600 text-center">
-          {isRecording ? '🎤 음성 인식 중...' : '💡 전체 구절을 입력 또는 음성으로 암송하세요 (80% 이상 유사하면 통과)'}
+          {isRecording
+            ? (IS_NATIVE ? '🎤 음성 인식 중... 끝나면 마이크를 다시 누르세요' : '🎤 음성 인식 중...')
+            : '💡 전체 구절을 입력 또는 음성으로 암송하세요 (80% 이상 유사하면 통과)'}
         </p>
       </div>
     </div>

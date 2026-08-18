@@ -228,7 +228,7 @@ function App() {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="cm_theme">
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
-            <div className="w-full min-h-screen relative overflow-hidden" style={{ background: 'var(--page-bg)', color: 'var(--ink)' }}>
+            <div data-capture-root className="w-full min-h-screen relative overflow-hidden" style={{ background: 'var(--page-bg)', color: 'var(--ink)' }}>
               <div className="ambient-glow-layer"></div>
               <div className="relative z-10" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)' }}>
                 <ScrollToTop />

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Capacitor } from "@capacitor/core";
 import { Calendar as CalendarIcon, Image as ImageIcon, Home as HomeIcon, Settings, Baby, Users, GraduationCap, List, Bookmark, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWeeklyVerses } from "@/hooks/use-verses";
@@ -67,6 +68,24 @@ function getHomeCardScale(contentLength: number) {
     contentLH: 1.25,
     letterSpacing: '-0.7px',
     scaleX: 0.93,
+  };
+}
+
+// iOS만 본문(content) / 공과명(lesson)에 비례 배율 적용. 자수 분기는 그대로.
+const IS_IOS = Capacitor.getPlatform() === 'ios';
+const HOME_VERSE_SCALE = IS_IOS ? 1.20 : 1;
+const HOME_LESSON_SCALE = IS_IOS ? 1.25 : 1;
+
+function scaleClampUnits(s: string, scale: number): string {
+  if (scale === 1) return s;
+  return s.replace(/(\d+(?:\.\d+)?)(px|dvh)/g, (_, n, unit) => `${(parseFloat(n) * scale).toFixed(2)}${unit}`);
+}
+
+function applyHomeScale(s: ReturnType<typeof getHomeCardScale>) {
+  return {
+    ...s,
+    lesson: scaleClampUnits(s.lesson, HOME_LESSON_SCALE),
+    content: scaleClampUnits(s.content, HOME_VERSE_SCALE),
   };
 }
 
@@ -152,10 +171,11 @@ export default function Home() {
     <div className="min-h-screen relative pb-12">
       {/* 상단 고정 바 (다른 탭과 동일 양식) */}
       <header
-        className="fixed top-0 left-0 right-0 pt-6 pb-1 px-4 z-40"
+        className="fixed top-0 left-0 right-0 pb-1 px-4 z-40"
         style={{
           background: 'var(--page-bg)',
           borderBottom: '1px solid var(--border-soft)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)',
         }}
       >
         <div className="flex items-center justify-between h-8">
@@ -189,12 +209,12 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="relative z-10 container mx-auto px-4 mt-[58px]">
+      <main className="relative z-10 container mx-auto px-4" style={{ marginTop: 'calc(58px + env(safe-area-inset-top, 0px))' }}>
 
         {/* 이번 주 암송 - 뷰포트에 맞게 3부서 표시 */}
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           {/* 높이: 전체화면 - 헤더(58px) - 내비바(48px) = 106px, py-2로 상하 8px 균등 여백 */}
-          <div className="flex flex-col py-2" style={{ height: 'calc(100dvh - 130px)' }}>
+          <div className="flex flex-col py-2" style={{ height: 'calc(100dvh - 130px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))' }}>
           <div className="flex items-center justify-between mb-1 flex-shrink-0">
             <h2 className="text-base font-bold" style={{ color: 'var(--ink)' }}>부서별 암송</h2>
             <Link href="/splash">
@@ -213,7 +233,7 @@ export default function Home() {
           <div className="flex flex-col gap-1 flex-1 min-h-0">
             {/* 유치부 */}
             {(() => {
-              const s = getHomeCardScale(kindergartenWeekly?.thisWeek?.content?.length ?? 0);
+              const s = applyHomeScale(getHomeCardScale(kindergartenWeekly?.thisWeek?.content?.length ?? 0));
               return (
                 <div className="verse-card flex-1 min-h-0 flex flex-col relative overflow-hidden" style={{ padding: cardPad }}>
                   <span className="dept-glow" data-dept="kindergarten" />
@@ -276,7 +296,7 @@ export default function Home() {
             })()}
             {/* 초등부 */}
             {(() => {
-              const s = getHomeCardScale(elementaryWeekly?.thisWeek?.content?.length ?? 0);
+              const s = applyHomeScale(getHomeCardScale(elementaryWeekly?.thisWeek?.content?.length ?? 0));
               return (
                 <div className="verse-card flex-1 min-h-0 flex flex-col relative overflow-hidden" style={{ padding: cardPad }}>
                   <span className="dept-glow" data-dept="elementary" />
@@ -339,7 +359,7 @@ export default function Home() {
             })()}
             {/* 중고등부 */}
             {(() => {
-              const s = getHomeCardScale(youthWeekly?.thisWeek?.content?.length ?? 0);
+              const s = applyHomeScale(getHomeCardScale(youthWeekly?.thisWeek?.content?.length ?? 0));
               return (
                 <div className="verse-card flex-1 min-h-0 flex flex-col relative overflow-hidden" style={{ padding: cardPad }}>
                   <span className="dept-glow" data-dept="youth" />

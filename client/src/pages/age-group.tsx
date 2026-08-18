@@ -168,10 +168,11 @@ export default function AgeGroup() {
   return (
     <div className="relative z-10 min-h-screen pb-12">
       <header
-        className="fixed top-0 left-0 right-0 pt-6 pb-1 px-4 z-40"
+        className="fixed top-0 left-0 right-0 pb-1 px-4 z-40"
         style={{
           background: 'var(--page-bg)',
           borderBottom: '1px solid var(--border-soft)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)',
         }}
       >
         <div className="flex items-center justify-between h-8">
@@ -201,12 +202,12 @@ export default function AgeGroup() {
         </div>
       </header>
 
-      <main className="px-3 sm:px-5 mt-[58px]">
+      <main className="px-3 sm:px-5" style={{ marginTop: 'calc(58px + env(safe-area-inset-top, 0px))' }}>
         {/* 높이: 메인화면(home)과 정확히 동일한 reserve 값(130px) 사용
             → 어느 탭을 들어가도 마지막 카드의 아랫 변 라인이 메인화면과 일치 */}
         <div
           className="flex flex-col py-2"
-          style={{ height: 'calc(100dvh - 130px)' }}
+          style={{ height: 'calc(100dvh - 130px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))' }}
         >
           {isLoading ? (
             <div className="flex flex-col gap-2 h-full">
@@ -247,13 +248,13 @@ export default function AgeGroup() {
                 ) : (
                   // 강조 모드 (기본) — 이번 주 크게, 지난/다음은 동일한 높이로 살짝 더 크게
                   <>
-                    <div className="flex-shrink-0" style={{ height: '108px' }}>
+                    <div className="flex-shrink-0" style={{ height: '132px' }}>
                       <VerseCard verse={verses[0] || null} weekType="last" onShare={handleShare} compact ageGroup={ageGroup} />
                     </div>
                     <div className="flex-1 min-h-0">
                       <VerseCard verse={verses[1] || null} weekType="current" onShare={handleShare} compact ageGroup={ageGroup} />
                     </div>
-                    <div className="flex-shrink-0" style={{ height: '108px' }}>
+                    <div className="flex-shrink-0" style={{ height: '132px' }}>
                       <VerseCard verse={verses[2] || null} weekType="next" onShare={handleShare} compact ageGroup={ageGroup} />
                     </div>
                   </>

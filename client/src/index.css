@@ -169,6 +169,17 @@
 
   html {
     background: var(--page-bg);
+    /* 플랫폼별 폰트 배율 — iOS는 WKWebView에서 폰트가 작게 렌더되어 보정 */
+    --font-scale: 1;
+    /* 암송 본문 전용 추가 배율 — 본문은 한 단계 더 크게 (자동 축소 단계는 그대로) */
+    --verse-scale: 1;
+  }
+  html.platform-ios {
+    --font-scale: 1.25;
+    --verse-scale: 1.80;
+    font-size: calc(16px * var(--font-scale));
+    /* iOS WKWebView 자동 텍스트 크기 조정 비활성화(일관성) */
+    -webkit-text-size-adjust: 100%;
   }
 
   body {

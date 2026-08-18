@@ -16,6 +16,7 @@
 	},
 	"packageClassList": [
 		"MediaPlugin",
+		"SpeechRecognition",
 		"AppPlugin",
 		"FilesystemPlugin",
 		"LocalNotificationsPlugin",
