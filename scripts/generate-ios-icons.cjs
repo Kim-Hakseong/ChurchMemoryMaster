@@ -45,8 +45,11 @@ async function generate() {
       const pixel = Math.round(spec.size * scale);
       const filename = `appicon-${spec.size}x${spec.size}@${scale}x.png`;
       const outPath = path.join(iconsetDir, filename);
+      // App Store 는 아이콘에 알파 채널이 있으면 업로드를 거부한다(오류 90717).
+      // 투명 배경으로 두지 말고 흰색으로 평탄화해서 알파를 제거한다.
       await sharp(logo)
-        .resize(pixel, pixel, { fit: 'contain', background: { r:255, g:255, b:255, alpha:0 } })
+        .resize(pixel, pixel, { fit: 'contain', background: { r:255, g:255, b:255, alpha:1 } })
+        .flatten({ background: { r:255, g:255, b:255 } })
         .png()
         .toFile(outPath);
       images.push({ size: `${spec.size}x${spec.size}`, idiom: 'iphone', scale: `${scale}x`, filename });
@@ -55,7 +58,11 @@ async function generate() {
 
   // App Store (marketing) 1024x1024
   const marketingName = 'appicon-1024.png';
-  await sharp(logo).resize(1024, 1024, { fit: 'contain', background: { r:255, g:255, b:255, alpha:0 } }).png().toFile(path.join(iconsetDir, marketingName));
+  await sharp(logo)
+    .resize(1024, 1024, { fit: 'contain', background: { r:255, g:255, b:255, alpha:1 } })
+    .flatten({ background: { r:255, g:255, b:255 } })
+    .png()
+    .toFile(path.join(iconsetDir, marketingName));
   images.push({ size: '1024x1024', idiom: 'ios-marketing', scale: '1x', filename: marketingName });
 
   const contents = {
