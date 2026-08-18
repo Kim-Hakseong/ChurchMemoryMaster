@@ -1934,3 +1934,104 @@ private func scheduleWidgetSync() {
 
 **문서 갱신**: 2026-06-03
 **작성**: Claude Code 세션 (Play Console 등록 + 사업자 계정 전환 검토 라운드)
+
+---
+
+## 20. App Store 출시 — 심사 제출 (2026-08-18)
+
+맥미니 M4 환경에서 Apple Developer Program 등록($99) 완료 후 첫 App Store 제출까지 진행한 라운드.
+섹션 18(iOS 이전)에서 만든 로컬 Xcode 빌드 체계를 그대로 사용.
+
+### 20-1. 제출 전 점검에서 나온 차단 요소
+
+- **위젯 배포 타겟이 iOS 26.4** — Log 18-5 에는 17.0 으로 적혀 있었으나 실제 pbxproj 값은 26.4.
+  이대로 출시하면 사실상 모든 기기에서 위젯이 노출되지 않는 상태였음. 17.0 으로 수정.
+- **TARGETED_DEVICE_FAMILY "1,2"** → "1" (iPhone 전용). iPad 스크린샷 준비와 iPad 레이아웃 심사 리스크 제거.
+- **`ITSAppUsesNonExemptEncryption` 누락** → Info.plist 에 false 추가(빌드마다 뜨는 수출규정 질문 생략).
+- **스크린샷 규격** — 기존 7장은 1242×2208(구 5.5" / Play Store 규격)인데 현재 App Store 는 6.9" 1290×2796 요구.
+
+### 20-2. 음성 인식 네이티브 전환
+
+`flashcard-modal.tsx` 가 `webkitSpeechRecognition`(Web Speech API)을 쓰고 있었는데
+**WKWebView 는 이 API 를 지원하지 않음**(Safari 전용). 미지원 가드가 있어 크래시는 없었지만 iOS 에서 기능 자체가 동작 안 함.
+
+→ `@capacitor-community/speech-recognition@7.0.1` 도입.
+- 네이티브(iOS/Android): `partialResults: true` + `listeningState` 리스너, 마이크 버튼 토글(수동 종료)
+- 웹: 기존 Web Speech API 경로 유지
+- 모달 닫힐 때 `stop()` + `removeAllListeners()` 정리
+- Info.plist 에 `NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription` 추가
+
+### 20-3. 스크린샷 6.9" 재출력
+
+`~/Haku/church-memo-screenshots` (Next.js 에디터) 캔버스를 1242×2208 → **1290×2796** 으로 변경.
+Iter 1~7 로 튜닝한 7장의 좌표를 재작업하지 않기 위해 **디자인 좌표계 스케일 배치** 방식 채택:
+
+- `DESIGN_W/H = 1242/2208`, `DESIGN_SCALE = 1290/1242 ≈ 1.0386`
+- `SlideFrame` 안쪽에 디자인 좌표계 컨테이너를 두고 `transform: scale()` + **하단 정렬**
+  (모든 슬라이드가 폰 하단을 캔버스 밖으로 흘려 자연 크롭시키는 구성이라, 남는 세로 여백을 위에 몰아야 크롭이 유지됨)
+- 워드마크만 `WORDMARK_LIFT` 로 되돌려 캔버스 최상단 기준 배치 (안 그러면 상단에 고아처럼 뜸)
+
+`export-headless.mjs`(playwright) 로 헤드리스 일괄 출력 → `out-appstore/01~07.png`.
+
+### 20-4. 실기기 테스트에서 발견한 3건 (verse-overview)
+
+계측으로 원인을 확인하고 수정. 자세한 내용은 커밋 `14283c3`.
+
+1. **무한 리렌더** — `verses` 가 매 렌더 `.filter()` 로 새 배열이 되는데 북마크 `useEffect` 의존성이 `[verses]`,
+   내부에서 `setBookmarkedVerses(new Set())` 호출 → 루프. **가만히 둔 5초에 793회 실행(초당 ~160회).**
+   → `useMemo` 로 파생 배열 안정화. 재측정 0회.
+2. **검색 중 자동 스크롤** — 스크롤 효과 의존성의 `verses?.length` 가 검색 결과 개수에 따라 바뀌며 `scrollIntoView` 재실행.
+   → 진입 시 1회만, 검색 중 금지, `setTimeout` cleanup 추가.
+3. **검색창 탭 어려움** — 헤더 내부는 rem 기반이라 iOS 폰트 배율(root 20px)에서 157→186px 로 커지는데
+   본문 상단 여백은 `144px` 고정 → 목록이 헤더 밑으로 **42px** 파고들어 검색창 하단이 겹침(웹/안드로이드도 13px).
+   → `useHeaderHeight` 훅(ResizeObserver 실측) 신설, 헤더 높이 + 8px 사용.
+
+> home(12px)·age-group(12px)·bookmarks(25px) 에도 같은 패턴이 있으나 겹침 구간에 탭 대상이 없고
+> 기존 레이아웃 튜닝(16-2)을 건드리게 되어 이번엔 손대지 않기로 결정.
+
+### 20-5. 업로드 과정에서 막힌 것
+
+- **CocoaPods 1.16.2 가 Xcode 26 의 `objectVersion = 70` 을 못 읽음** → `cap sync` 실패.
+  `brew upgrade cocoapods` (1.17.0) 로 해결.
+- **아이콘 알파 채널 (오류 90717)** — 12개 중 11개 아이콘에 알파. App Store 는 앱 아이콘 투명도 불허.
+  원인은 `scripts/generate-ios-icons.cjs` 가 여백을 `alpha:0` 으로 채운 것 → **스크립트에서 flatten 처리**
+  (아이콘 파일만 고치면 재생성 시 재발).
+- **MinimumOSVersion 14.0 경고** — 2027 봄부터 15.0 미만 업로드 거부. 프로젝트/Podfile 모두 15.0 상향 후 pod 재설치.
+
+### 20-6. 개인정보 처리방침
+
+원격(GitHub)에 2026-06-03 자로 이미 만들어 둔 방침 페이지가 있었음(로컬에 없어 중복 작성했다가 폐기).
+기존 구조(`docs/index.html` 리다이렉트 + `docs/privacy-policy.html`) 유지하고 오늘 변경분만 반영:
+
+- 3항 마이크 설명이 "Capacitor 기본 권한이며 실제로 녹음하지 않습니다" → **네이티브 음성인식 도입으로 사실과 달라져 정정**
+- 3-1항 신설: OS(Apple/Google) 음성 인식 시스템으로 음성이 전송될 수 있음을 명시
+- 8항 보안 문구도 정합화
+
+URL: https://kim-hakseong.github.io/ChurchMemoryMaster/privacy-policy.html (GitHub Pages, main /docs)
+
+### 20-7. 제출 정보
+
+- Apple ID: `6802671002` / 번들 ID: `com.church.memory.app` / SKU: `church-memory-app-001`
+- 빌드 `1.0 (1)`, Delivery UUID `30f2fd3c-408b-4dd3-845e-ead8efb9e4e7`
+- 제출 ID `c16e2880-bf1c-4737-a10d-e7a0b210094b` (2026-08-18 22:52, 심사 대기 중)
+- 카테고리 교육 / 연령 등급 4+ / 무료 / 대한민국 배포
+- Apple Silicon Mac·Vision Pro 사용 가능은 **해제**(미검증 환경)
+- 등록 문구는 `AppStore.md` 참조
+
+### 20-8. 트러블슈팅 메모
+
+- **App Store Connect API 키**: `.p8` 은 1회만 다운로드 가능. `~/.appstoreconnect/private_keys/AuthKey_<KEYID>.p8` 에 두면
+  `xcrun altool --apiKey <KEYID> --apiIssuer <ISSUER>` 가 자동으로 찾음. Key ID·Issuer ID 는 비밀이 아니지만 `.p8` 은 비밀.
+  팀 키(Team Key)가 업로드 표준(개별 키는 특정 개인에 묶임).
+- **업로드 전 `--validate-app` 을 반드시 먼저**: 아이콘 알파 오류를 업로드 전에 잡아줌.
+- **앱 레코드가 없으면 `--list-apps` 가 빈 배열** — 업로드도 거부됨. ASC 에서 앱을 먼저 만들어야 함.
+- **스크린샷 슬롯 주의**: 버전 페이지 기본 탭이 6.5"(1242×2688) 로 보일 수 있음.
+  "미디어 관리자에서 모든 크기 보기" 로 **6.9"(1290×2796)** 슬롯을 찾아 올려야 함.
+- **"심사에 추가" 가 막히는 흔한 두 가지**: 앱 개인정보의 **처리방침 URL**(데이터 수집 설문과 별개 항목),
+  앱 정보의 **콘텐츠 권한 정보**.
+- **연령 등급 "어린이용"은 선택하지 말 것**: Kids Category 는 외부 링크 차단·제3자 분석 금지 등 훨씬 엄격한 규정이 적용됨.
+
+---
+
+**문서 갱신**: 2026-08-18
+**작성**: Claude Code 세션 (App Store 심사 제출 라운드)
