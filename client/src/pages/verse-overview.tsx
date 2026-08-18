@@ -7,12 +7,13 @@ import BottomNavigation from "@/components/bottom-navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { getCurrentWeekRange, isDateInRange } from "@/lib/date-utils";
 import { setupBackHandler, cleanupBackHandler } from "@/lib/back-handler";
 import { toggleBookmark, isBookmarked } from "@/lib/bookmarks";
 import FlashcardModal from "@/components/flashcard-modal";
 import { getFontSize, getFontSizeClass } from "@/lib/font-size-settings";
+import { useHeaderHeight } from "@/hooks/use-header-height";
 
 const AGE_GROUP_INFO = {
   kindergarten: {
@@ -58,6 +59,9 @@ export default function VerseOverview() {
 
   const info = AGE_GROUP_INFO[ageGroup];
   const Icon = info?.icon;
+
+  // 고정 헤더 높이 실측 — 아래 본문이 비워둘 여백 계산에 사용
+  const { ref: headerRef, height: headerHeight } = useHeaderHeight<HTMLElement>();
   
   // 부서별 폰트 크기 가져오기
   const fontSizeClass = getFontSizeClass(getFontSize(ageGroup as AgeGroup));
@@ -75,18 +79,25 @@ export default function VerseOverview() {
   }, [setLocation]);
   
   // 중고등부의 경우 순서 재정렬: 105~157을 1~53으로, 1~52는 54~105로, 53~104는 106~157로
-  let reorderedVerses = allVerses;
-  if (ageGroup === 'youth' && allVerses && allVerses.length >= 157) {
-    // 현재: 1~52, 53~104, 105~157
-    // 목표: [105~157 → 1~53], [1~52 → 54~105], [53~104 → 106~157]
-    const part1 = allVerses.slice(0, 52);    // 현재 1~52과
-    const part2 = allVerses.slice(52, 104);  // 현재 53~104과
-    const part3 = allVerses.slice(104, 157); // 현재 105~157과
-    reorderedVerses = [...part3, ...part1, ...part2];
-  }
-  
+  // useMemo 필수: 매 렌더마다 새 배열을 만들면 아래 useEffect 들의 의존성이 항상 바뀌어
+  // 무한 리렌더 루프가 발생한다.
+  const reorderedVerses = useMemo(() => {
+    if (ageGroup === 'youth' && allVerses && allVerses.length >= 157) {
+      // 현재: 1~52, 53~104, 105~157
+      // 목표: [105~157 → 1~53], [1~52 → 54~105], [53~104 → 106~157]
+      const part1 = allVerses.slice(0, 52);    // 현재 1~52과
+      const part2 = allVerses.slice(52, 104);  // 현재 53~104과
+      const part3 = allVerses.slice(104, 157); // 현재 105~157과
+      return [...part3, ...part1, ...part2];
+    }
+    return allVerses;
+  }, [allVerses, ageGroup]);
+
   // 1사이클만 표시 (maxLessons까지만)
-  const cycleVerses = reorderedVerses?.slice(0, info?.maxLessons || reorderedVerses?.length);
+  const cycleVerses = useMemo(
+    () => reorderedVerses?.slice(0, info?.maxLessons || reorderedVerses?.length),
+    [reorderedVerses, info?.maxLessons]
+  );
   
   // 이번 주 암송 구절 찾기 (전체 구절에서 먼저 검색 후, 표시 목록에서 매칭)
   const currentWeekRange = getCurrentWeekRange(new Date());
@@ -101,7 +112,7 @@ export default function VerseOverview() {
     : undefined;
   
   // 검색 필터링
-  const verses = cycleVerses?.filter(verse => {
+  const verses = useMemo(() => cycleVerses?.filter(verse => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -109,35 +120,52 @@ export default function VerseOverview() {
       verse.reference.toLowerCase().includes(query) ||
       verse.lessonName?.toLowerCase().includes(query)
     );
-  });
+  }), [cycleVerses, searchQuery]);
   
-  // 이번 주 암송으로 스크롤
-  useEffect(() => {
-    if (currentWeekVerse && currentWeekVerseRef.current) {
-      setTimeout(() => {
-        currentWeekVerseRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
-        });
-      }, 500);
-    }
-  }, [currentWeekVerse?.id, verses?.length]);
+  // 이번 주 암송으로 스크롤 — 페이지 진입 후 한 번만.
+  // 이전에는 의존성에 verses?.length 가 있어 검색어를 칠 때마다 결과 개수가 바뀌면서
+  // 화면이 저절로 스크롤되는 문제가 있었다.
+  const hasScrolledRef = useRef(false);
 
-  // 북마크 상태 로드
   useEffect(() => {
+    hasScrolledRef.current = false;
+  }, [ageGroup]);
+
+  useEffect(() => {
+    if (searchQuery.trim()) return;        // 검색 중에는 자동 스크롤하지 않음
+    if (hasScrolledRef.current) return;
+    if (!currentWeekVerse || !currentWeekVerseRef.current) return;
+
+    hasScrolledRef.current = true;
+    const timer = setTimeout(() => {
+      currentWeekVerseRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [currentWeekVerse?.id, searchQuery]);
+
+  // 북마크 상태 로드 — 검색 결과(verses)가 아니라 전체 목록(cycleVerses) 기준.
+  // 검색어가 바뀔 때마다 북마크를 다시 조회할 이유가 없다.
+  useEffect(() => {
+    if (!cycleVerses) return;
+    let cancelled = false;
+
     const loadBookmarks = async () => {
-      if (!verses) return;
       const bookmarkedSet = new Set<number>();
-      for (const verse of verses) {
+      for (const verse of cycleVerses) {
         const bookmarked = await isBookmarked(verse.id, verse.ageGroup);
         if (bookmarked) {
           bookmarkedSet.add(verse.id);
         }
       }
-      setBookmarkedVerses(bookmarkedSet);
+      if (!cancelled) setBookmarkedVerses(bookmarkedSet);
     };
     loadBookmarks();
-  }, [verses]);
+
+    return () => { cancelled = true; };
+  }, [cycleVerses]);
 
   if (!info) {
     return (
@@ -156,6 +184,7 @@ export default function VerseOverview() {
     <div className="min-h-screen relative pb-16">
       {/* 상단 고정 바 */}
       <header
+        ref={headerRef}
         className="fixed top-0 left-0 right-0 pb-4 px-6 z-50"
         style={{
           background: 'var(--page-bg)',
@@ -207,7 +236,17 @@ export default function VerseOverview() {
         </div>
       </header>
 
-      <main className="relative z-10 container mx-auto px-4 py-6 space-y-6" style={{ marginTop: 'calc(144px + env(safe-area-inset-top, 0px))' }}>
+      {/* 상단 여백은 헤더 실측 높이 기준. px 상수로 두면 iOS 폰트 배율(1.25배)에서
+          헤더가 커진 만큼 목록이 헤더 밑으로 파고들어 검색창 탭이 어려워진다.
+          실측 전 첫 프레임용 폴백은 iOS 기준(가장 큰 값)으로 잡아 겹침이 생기지 않게 한다. */}
+      <main
+        className="relative z-10 container mx-auto px-4 py-6 space-y-6"
+        style={{
+          marginTop: headerHeight !== null
+            ? `${headerHeight + 8}px`
+            : 'calc(186px + env(safe-area-inset-top, 0px))',
+        }}
+      >
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="verse-card">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">

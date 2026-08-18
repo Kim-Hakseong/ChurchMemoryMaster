@@ -622,7 +622,7 @@ export default function FlashcardModal({ open, onOpenChange, verse }: FlashcardM
 
       <Button
         onClick={handleCheckExpertMode}
-        className="w-full"
+        className="w-full flashcard-dark-cta"
         disabled={!fullRecitationText.trim()}
       >
         <CheckCircle className="w-4 h-4 mr-2" />
