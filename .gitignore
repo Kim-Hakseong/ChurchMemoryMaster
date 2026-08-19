@@ -42,3 +42,4 @@ keystore.properties
 android/keystore.properties
 # App Store Connect API 키
 *.p8
+review-assets/

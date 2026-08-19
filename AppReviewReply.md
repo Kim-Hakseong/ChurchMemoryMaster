@@ -29,9 +29,11 @@ It starts from launching the app and walks through the core user flow:
 
 The app has no account registration, no login, no account deletion flow,
 no paid content, no in-app purchase or subscription, and no user-generated
-content that is shared with other users. The only permission prompts are
-microphone / speech recognition (optional) and notifications (optional);
-both are shown in the recording.
+content that is shared with other users. The microphone and speech
+recognition permission prompts (optional feature) are shown in the recording,
+including the user tapping Allow. The only other permission is notifications
+(optional), which the app requests when the user adds a notification
+schedule in Settings.
 
 2. DEVICES AND OS TESTED
 - iPhone 16 (iPhone17,3), iOS 26.5.2 — physical device
