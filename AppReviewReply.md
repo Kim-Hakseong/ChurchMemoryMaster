@@ -92,9 +92,10 @@ The content consists of the church school's own curriculum: a lesson list prepar
 the church, each lesson paired with one short Bible verse excerpt (a single verse,
 typically one sentence) used for memorization, plus the church's own event calendar.
 Bible verses are quoted briefly for religious education purposes and each quotation
-is accompanied by its book, chapter and verse reference. No full chapters, no full
-books and no complete Bible text are distributed, and the app does not function as a
-Bible reader.
+is accompanied by its book, chapter and verse reference. The verses are taken from the
+Korean Revised Version (개역한글, first published 1961), a translation whose term of
+protection under Korean copyright law has expired. No full chapters, no full books and
+no complete Bible text are distributed, and the app does not function as a Bible reader.
 
 Privacy policy: https://kim-hakseong.github.io/ChurchMemoryMaster/privacy-policy.html
 
