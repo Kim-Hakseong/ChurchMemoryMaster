@@ -21,7 +21,7 @@
   <a href="https://apps.apple.com/kr/app/id6802671002">
     <img src="https://img.shields.io/badge/App%20Store-1.0%20출시-000000?logo=apple&logoColor=white" />
   </a>
-  <img src="https://img.shields.io/badge/Google%20Play-출시%20준비%20중-34A853?logo=googleplay&logoColor=white" />
+  <img src="https://img.shields.io/badge/Google%20Play-심사%20중-FBBC04?logo=googleplay&logoColor=white" />
 </p>
 
 ---
@@ -140,7 +140,7 @@ scripts/                 아이콘 생성, 엑셀 복사, seed 빌드
 | [docs/RELEASE-GUIDE.md](docs/RELEASE-GUIDE.md) | 출시·운영 가이드 (버전 규칙, 서명키, 최종 체크리스트) |
 | [HANDOFF-WINDOWS.md](HANDOFF-WINDOWS.md) | 윈도우에서 Play Store 빌드하기 |
 | [PlayStore.md](PlayStore.md) · [AppStore.md](AppStore.md) | 스토어 등록정보 최종 문구 |
-| [Log.md](Log.md) | 개발 이력 전체 (23장) |
+| [Log.md](Log.md) | 개발 이력 전체 (24장) |
 | [Design2.md](Design2.md) | 디자인 토큰 |
 
 ---
