@@ -169,11 +169,51 @@ versionName "1.0.1"
 
 ## 5. AAB 빌드 (서명)
 
-Android Studio → `Build > Generate Signed Bundle / APK` → **Android App Bundle**
-→ **첫 출시 때 쓴 `church-memory-release.jks` 그대로 선택** → Build Variant: `release`
+> ⚠️ **빌드 전에 반드시 `npm install` → `npm run build` → `npx cap sync android` 를 거칠 것.**
+> `android/app/src/main/assets/public/` 은 `cap sync` 없이는 갱신되지 않아서, 맥에서 고친
+> 내용이 하나도 안 들어간 AAB 가 나간다. 실제로 2026-08-29 시점에 이 폴더가 3개월 낡아
+> 있었다.
 
-> ⚠️ 키스토어가 다르면 업데이트로 인정되지 않습니다. 이 키를 잃으면 같은 앱으로는
-> 영영 업데이트할 수 없으니, 아직 백업이 한 곳뿐이면 클라우드+외장 저장소에 복사해 두세요.
+
+### 현재 사용 중인 키 (2026-08-29 교체됨)
+
+```
+키스토어 경로 : C:\Users\user\keystores\church-memory-2026.jks
+키 별칭       : key0
+비밀번호      : C:\Users\user\keystores\새키_비밀번호.txt 에 기록
+SHA-256       : A3:95:38:44:77:DB:89:40:02:DC:BA:1A:3C:BB:18:6F:
+                6E:E9:53:87:E1:35:3A:E3:AA:5E:0A:8C:17:9E:42:A1
+```
+
+> ⚠️ **비밀번호는 24자리 랜덤이라 기억으로 되살릴 수 없습니다.**
+> 비밀번호 관리자 + 클라우드에 반드시 백업하세요.
+
+**CLI 빌드 (권장)** — `android/keystore.properties` 가 이미 이 키를 가리키고 있습니다.
+```bat
+set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
+cd android
+gradlew.bat bundleRelease
+```
+결과물: `android\app\build\outputs\bundle\release\app-release.aab`
+
+**Android Studio 로 하려면** `Build > Generate Signed Bundle / APK` → **Android App Bundle**
+→ 위 `.jks` 선택 → Build Variant: `release`
+
+### 왜 키를 교체했나
+
+첫 AAB(2026-06-03)를 서명한 옛 키 `C:\Users\user\keystores\church-memory-key` 는
+**비밀번호를 분실**했다. 이 PC 전체를 뒤졌지만 어디에도 기록이 없었고, Android Studio 의
+비밀번호 금고(`c.kdbx`)도 키 생성일보다 앞서 있어 저장된 적이 없었다.
+
+다행히 **Play Console 에 업로드된 번들이 0건**이라 업로드 키가 아직 고정되지 않은 상태였다.
+그래서 재설정 신청(수일 소요) 없이 새 키를 만들어 첫 업로드에 그대로 쓸 수 있었다.
+
+- 옛 키(`church-memory-key`)와 `keystore-backup-2026-08-29.zip` 은 이제 쓸모없다.
+  다만 새 키로 업로드가 완전히 끝난 뒤에 정리할 것.
+- `Android 개발자 인증` 페이지의 지문 `C7:CE:DC:37:...` 은 **Play 앱 서명 키**(구글 보관)라
+  업로드 키를 바꿔도 그대로다. 손댈 필요 없다.
+
+> ⚠️ 앞으로는 이 키가 유일하다. 다른 키로 서명하면 업데이트로 인정되지 않는다.
 > (맥에는 키스토어가 없습니다. 그래서 Play Store 빌드는 윈도우에서 해야 합니다)
 
 ---

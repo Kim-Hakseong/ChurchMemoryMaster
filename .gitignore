@@ -40,6 +40,11 @@ clear-storage.js
 *.keystore
 keystore.properties
 android/keystore.properties
+
+# 키스토어 백업 아카이브 — 안에 서명 키가 들어있다. 이 저장소는 public 이므로 절대 커밋 금지
+keystore-backup*.zip
+*keystore*.zip
+*키스토어*.zip
 # App Store Connect API 키
 *.p8
 review-assets/
