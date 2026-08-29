@@ -2271,6 +2271,78 @@ win32 바이너리만 있고 linux-x64 가 없기 때문이다. 게다가 **셸�
 - 참고: `build-seed.cjs` 가 만드는 `client/public/seed.json` 은 `verses: []` 가 **정상**이다
   (커밋 `0c7634a` — 앱이 엑셀에서 직접 읽는 구조). 0건이라고 놀라지 말 것.
 
+### 23-6-3. 옛 키 비밀번호 분실 → 새 업로드 키로 교체 (2026-08-29)
+찾아낸 `church-memory-key` 의 **비밀번호가 어디에도 없었다.**
+
+- 확장자 기준 C드라이브 전수 조사, PKCS12 시그니처 전수 조사, 메모성 파일 내용 검색
+  (`Desktop`/`Documents`/`Downloads`/`OneDrive`/`Recent`) 모두 0건
+- Android Studio 비밀번호 금고 `c.kdbx` 는 **2026-02-17** 자 — 키 생성(6/3)보다 앞서므로
+  서명 마법사가 비밀번호를 저장한 적이 없다. `actionSummary.xml` 에 `Android.GenerateSignedApk`
+  사용 기록만 남아 있었다
+- ⚠️ **키스토어는 비밀번호 없이 열 수 없다.** `asn1parse` 로 뜯어보면 개인키는 물론
+  **인증서까지 `encryptedData`** 다. 평문은 별칭 `key0` 와 타임스탬프뿐. "파일을 열어서
+  비밀번호를 본다"는 방법은 존재하지 않고, `keytool -storepasswd` 도 현재 비밀번호를 요구한다
+
+**결정적 사실: `테스트 및 출시 → 최신 버전 및 번들` 이 완전히 비어 있었다.**
+번들 업로드 이력이 0건이면 **업로드 키가 아직 고정되지 않는다** (첫 업로드가 업로드 키를
+정의한다). 따라서 재설정 신청(수일 소요) 없이 새 키를 만들어 쓰면 그만이었다.
+
+**새 키 (현재 유효):**
+```
+C:/Users/user/keystores/church-memory-2026.jks
+별칭    : key0
+비밀번호: C:/Users/user/keystores/새키_비밀번호.txt (24자리 랜덤, 스크립트가 생성)
+SHA-256 : A3:95:38:44:77:DB:89:40:02:DC:BA:1A:3C:BB:18:6F:
+          6E:E9:53:87:E1:35:3A:E3:AA:5E:0A:8C:17:9E:42:A1
+소유자  : CN=Hakseong Kim, OU=Dev, O=TECHSENSE, L=Cheongju, C=KR   (조직 계정 반영)
+만료    : 2054-01-14
+```
+
+**키 3개 구분 (헷갈리기 쉬움):**
+| 지문 | 정체 |
+|------|------|
+| `C7:CE:DC:37:...` | **Play 앱 서명 키** — 구글 보관. `Android 개발자 인증` 에 등록된 게 이것. 업로드 키를 바꿔도 불변 |
+| `84:CA:B2:43:...` | 옛 업로드 키 — 비밀번호 분실, 폐기 |
+| `A3:95:38:44:...` | 새 업로드 키 — 현재 사용 |
+
+### 23-6-4. WSL 에서 Windows 툴체인을 그대로 쓸 수 있다
+23-6-2 에서 "윈도우에서 직접 하라"고 넘겼으나, **WSL interop 으로 전부 처리 가능했다.**
+
+- Windows node `v24.11.1` / npm `11.6.2`, JDK 는 Android Studio 번들
+  `C:\Program Files\Android\Android Studio\jbr` (**JDK 21**) 사용
+- bash→cmd 인용 부호가 깨지므로 **배치 파일을 만들어 실행**하는 편이 확실하다.
+  경로에 공백·괄호가 있어 `cd /d "..."` 로 감싸야 한다. 한글 출력은 `chcp 65001`
+```bash
+BAT=/mnt/c/Users/user/AppData/Local/Temp/x.bat
+cat > "$BAT" <<'EOF'
+@echo off
+chcp 65001 >nul
+set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
+cd /d "C:\Users\user\Downloads\Project\ChurchMemoryMaster (3) (4)\ChurchMemoryMaster\android"
+call gradlew.bat bundleRelease --no-daemon
+EOF
+sed -i 's/$/\r/' "$BAT"       # CRLF 로 변환 필수
+/mnt/c/Windows/System32/cmd.exe /c "C:\Users\user\AppData\Local\Temp\x.bat"
+```
+
+### 23-6-5. 릴리즈 AAB 빌드 완료 (2026-08-29 17:56)
+```
+BUILD SUCCESSFUL in 2m 49s
+android/app/build/outputs/bundle/release/app-release.aab   4,706,428 bytes
+```
+검증 결과 — 전부 통과:
+
+| 항목 | 결과 |
+|------|------|
+| 서명 지문 | `A3:95:38:44:...:42:A1` — 새 업로드 키와 일치 |
+| 인증서 | `O=TECHSENSE, CN=Hakseong Kim`, 만료 2054-01-14 |
+| 패키지명 | `com.church.memory.app` |
+| 웹 에셋 | 8/29 청크 11개 / **5월 잔재 0개** (`cap sync` 정상 반영) |
+| versionCode | 1 (업로드 이력 0건이라 그대로 사용) |
+
+> ⚠️ **exit code 를 믿지 말 것.** 이번 라운드에서 `npm run build` 가 sharp 크래시로 죽었는데도
+> 셸이 exit 0 을 반환했다. 산출물 타임스탬프와 서명 지문을 항상 직접 확인할 것.
+
 ### 23-7. 개인정보처리방침 조직 정보 반영
 호스팅은 **GitHub Pages 유지** (`kim-hakseong.github.io/ChurchMemoryMaster/privacy-policy.html`).
 연락처·운영자 정보만 조직 계정 기준으로 교체했다.
@@ -2297,7 +2369,10 @@ win32 바이너리만 있고 linux-x64 가 없기 때문이다. 게다가 **셸�
 - [x] `HANDOFF-WINDOWS.md` 5절 키스토어 파일명 정정
 - [x] 키스토어 백업 아카이브 생성 — `keystore-backup-2026-08-29.zip` (프로젝트 루트, git 미추적)
       → **클라우드·외장으로 추가 복사 필요. 아직 이 PC 한 곳뿐**
-- [ ] 윈도우에서 `npm install` → `npm run build` → `npx cap sync android` → `gradlew.bat bundleRelease`
+- [x] `npm install` → `npm run build` → `npx cap sync android` → `gradlew.bat bundleRelease` 완료 (23-6-5)
+- [ ] **`새키_비밀번호.txt` 를 비밀번호 관리자·클라우드에 백업** ← 최우선
+- [ ] Play Console 내부 테스트에 AAB 업로드 (첫 업로드가 업로드 키를 확정한다)
+- [ ] 업로드 성공 확인 후 옛 키(`church-memory-key`)와 `keystore-backup-2026-08-29.zip` 정리
 - [ ] 대시보드 `프로덕션 신청` 버튼 활성화 확인 (9/1 이후)
 - [ ] `versionCode` 확인 — 현재 1. 내부 테스트에 1을 이미 올렸다면 2로 bump
 - [ ] Play Store 업데이트 진행 (22장 남은 정리, `HANDOFF-WINDOWS.md` 절차)
