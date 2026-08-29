@@ -2196,9 +2196,80 @@ SHA-256 : 84:CA:B2:43:5A:1F:9E:4E:29:7C:3A:28:FA:6C:FC:E2:
           74:37:DD:CB:BC:F2:AE:A4:6A:A0:E9:37:7A:30:51:30
 ```
 
-파일명은 `church-memory-release.jks` (HANDOFF-WINDOWS.md 5절). 다만 이번 세션에서
-`C:\Users` 트리 검색으로는 실물을 찾지 못했다. 22장 "남은 정리"의 `키스토어 백업 확인`
-항목이 아직 미완이므로, 위치 확인과 클라우드+외장 이중 백업이 필요하다.
+**실물 위치 (2026-08-29 발견):**
+```
+C:/Users/user/keystores/church-memory-key      (2,628 bytes, PKCS12)
+```
+
+⚠️ **`church-memory-release.jks` 는 잘못된 파일명이었다.** 실제 파일은 **확장자가 없고**
+이름도 다르다. 그래서 이름 기반 검색에 전혀 걸리지 않았다 (C드라이브 전수 조사에서
+`.jks`/`.keystore`/`.p12`/`.pfx` 는 Faithtalk 것 하나뿐). HANDOFF-WINDOWS.md 5절도 함께 정정했다.
+
+동일 키라는 근거:
+| 근거 | 내용 |
+|------|------|
+| 별칭 | 파일 내부 `friendlyName` = `key0` → AAB 의 `META-INF/KEY0.RSA` 와 일치 |
+| 타임라인 | 키스토어 생성 `21:07:16` → AAB 서명 `21:08:33` (77초 차) |
+| 형식 | PKCS12 키스토어, 내부 타임스탬프도 2026-06-03 |
+
+- 인증서까지 암호화되어 있어 **비밀번호 없이는 지문 대조 불가**. 빌드가 통과하면 검증된다.
+- `android/keystore.properties` 에 경로·별칭 기입 완료 (git 미추적, 비밀번호는 수기 입력).
+- 백업: `keystore-backup-2026-08-29.zip` 를 프로젝트 루트에 생성. **루트 .gitignore 로 커밋 차단.**
+  저장소가 public 이므로 이 아카이브가 커밋되면 서명 키가 그대로 공개된다. 규칙 확인 필수.
+
+**탐색 방법 메모 (다음에 또 찾을 일이 생기면):**
+키스토어는 이름·확장자를 바꿔놔도 **PKCS12 시그니처로 잡을 수 있다.** 구형 JKS
+매직바이트(`FE ED FE ED`)로 찾으면 안 된다 — 요즘 keytool/Android Studio 기본값은 PKCS12 라
+`30 82` 로 시작한다. 실제로 첫 시도에서 이걸 잘못 잡아 오탐(0건)이 났다.
+```bash
+find /mnt/c/Users -type f -size +1k -size -60k | while read -r f; do
+  [ "$(head -c 2 "$f" | od -An -tx1 | tr -d ' \n')" = "3082" ] || continue
+  head -c 200 "$f" | od -An -tx1 | tr -d ' \n' | grep -q "2a864886f70d010c" && echo "$f"
+done
+```
+
+### 23-6-1. Play 앱 서명 활성 확인 — 키를 잃어도 복구 가능한 상태였다
+`Google Play로 보호됨 → Play 스토어 보호 → 앱 서명 키 보호` 에서 확인:
+
+```
+앱 서명 키 보호   ✅ Play에서 서명한 출시 버전
+```
+
+**진짜 앱 서명 키는 구글이 보관**하고, 로컬 `church-memory-key` 는 *업로드 키*일 뿐이다.
+분실했더라도 `Play 앱 서명 관리` 에서 업로드 키 재설정을 신청하면 복구된다. 앱을 영구히
+잃는 최악의 시나리오는 애초에 없었다. (그래도 백업은 필수)
+
+⚠️ **UI 위치가 바뀌었다.** 예전 `테스트 및 출시 → 앱 무결성` 은 안내 페이지만 남았고,
+실제 설정은 **`Google Play로 보호됨`** 페이지로 이동했다.
+
+### 23-6-2. WSL 에서는 웹 빌드가 통째로 돌지 않는다
+`npm run build` 가 `generate-icons` 단계에서 죽는다. `sharp` 가 Windows 에서 설치되어
+win32 바이너리만 있고 linux-x64 가 없기 때문이다. 게다가 **셸이 exit 0 을 반환해
+성공한 것처럼 보이므로** `dist/public` 타임스탬프를 반드시 직접 확인할 것.
+
+- 우회: 아이콘은 이미 생성·커밋되어 있으므로 sharp 단계만 건너뛴다
+  ```bash
+  npm run copy-excel && node scripts/build-seed.cjs && npx tsc && npx vite build
+  ```
+- 하지만 sharp 를 피해도 **`tsc` 에서 또 막힌다**:
+  ```
+  flashcard-modal.tsx(22,35): error TS2307:
+    Cannot find module '@capacitor-community/speech-recognition'
+  ```
+  20~22장(맥) 에서 추가된 의존성이라 **윈도우 워킹카피에 `npm install` 이 안 된 상태**다.
+- ⚠️ **WSL 에서 `npm install` 을 돌리면 안 된다.** `node_modules` 가 윈도우와 공유되는데
+  sharp 의 win32 바이너리가 linux 것으로 교체되어 **윈도우 빌드가 깨진다.**
+- **결론: 웹 빌드·AAB 빌드 모두 윈도우에서 한다.** AAB 는 Java 때문에 어차피 윈도우 전용이다.
+  ```bat
+  npm install
+  npm run build
+  npx cap sync android
+  cd android && gradlew.bat bundleRelease
+  ```
+- ⚠️ `android/app/src/main/assets/public/` 이 **2026-05-24 자로 3개월 낡아 있다.**
+  `cap sync` 를 거치지 않으면 무한 리렌더·헤더 겹침·음성인식 수정이 전부 빠진 AAB 가 나간다.
+- 참고: `build-seed.cjs` 가 만드는 `client/public/seed.json` 은 `verses: []` 가 **정상**이다
+  (커밋 `0c7634a` — 앱이 엑셀에서 직접 읽는 구조). 0건이라고 놀라지 말 것.
 
 ### 23-7. 개인정보처리방침 조직 정보 반영
 호스팅은 **GitHub Pages 유지** (`kim-hakseong.github.io/ChurchMemoryMaster/privacy-policy.html`).
@@ -2221,8 +2292,12 @@ SHA-256 : 84:CA:B2:43:5A:1F:9E:4E:29:7C:3A:28:FA:6C:FC:E2:
 - ⚠️ 낡은 워킹카피로 AAB 를 빌드하면 위 수정들이 빠진 채 나간다. **빌드 전 반드시 최신화**
 
 ### 23-9. 다음 작업
-- [ ] keystore `church-memory-release.jks` 위치 확인 → `android/keystore.properties` 작성 (23-6 지문으로 대조)
-- [ ] 윈도우에서 `gradlew bundleRelease` 빌드 검증
+- [x] keystore 위치 확인 → `C:/Users/user/keystores/church-memory-key` (23-6)
+- [x] `android/keystore.properties` 작성 — 경로·별칭 완료, **비밀번호 2개는 수기 입력 필요**
+- [x] `HANDOFF-WINDOWS.md` 5절 키스토어 파일명 정정
+- [x] 키스토어 백업 아카이브 생성 — `keystore-backup-2026-08-29.zip` (프로젝트 루트, git 미추적)
+      → **클라우드·외장으로 추가 복사 필요. 아직 이 PC 한 곳뿐**
+- [ ] 윈도우에서 `npm install` → `npm run build` → `npx cap sync android` → `gradlew.bat bundleRelease`
 - [ ] 대시보드 `프로덕션 신청` 버튼 활성화 확인 (9/1 이후)
 - [ ] `versionCode` 확인 — 현재 1. 내부 테스트에 1을 이미 올렸다면 2로 bump
 - [ ] Play Store 업데이트 진행 (22장 남은 정리, `HANDOFF-WINDOWS.md` 절차)

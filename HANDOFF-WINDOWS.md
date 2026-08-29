@@ -170,11 +170,27 @@ versionName "1.0.1"
 ## 5. AAB 빌드 (서명)
 
 Android Studio → `Build > Generate Signed Bundle / APK` → **Android App Bundle**
-→ **첫 출시 때 쓴 `church-memory-release.jks` 그대로 선택** → Build Variant: `release`
+→ **첫 출시 때 쓴 키스토어 그대로 선택** → Build Variant: `release`
 
-> ⚠️ 키스토어가 다르면 업데이트로 인정되지 않습니다. 이 키를 잃으면 같은 앱으로는
-> 영영 업데이트할 수 없으니, 아직 백업이 한 곳뿐이면 클라우드+외장 저장소에 복사해 두세요.
-> (맥에는 키스토어가 없습니다. 그래서 Play Store 빌드는 윈도우에서 해야 합니다)
+```
+키스토어 경로 : C:\Users\user\keystores\church-memory-key
+키 별칭       : key0
+```
+
+> ⚠️ **파일명에 확장자가 없습니다.** 파일 선택 창에서 `.jks` 필터에 걸리지 않으니
+> 파일 형식을 `All Files` 로 바꿔야 보입니다. (2026-08-29 정정 — 이전 문서에는
+> `church-memory-release.jks` 로 잘못 적혀 있었고, 그 이름의 파일은 존재하지 않습니다)
+
+> ⚠️ 키스토어가 다르면 업데이트로 인정되지 않습니다. 백업이 아직 이 PC 한 곳뿐이면
+> 클라우드+외장 저장소에 복사해 두세요. (맥에는 키스토어가 없습니다.
+> 그래서 Play Store 빌드는 윈도우에서 해야 합니다)
+
+**CLI 로 빌드하려면** `android/keystore.properties` 에 비밀번호 2개를 채운 뒤:
+```bat
+cd android
+gradlew.bat bundleRelease
+```
+결과물: `android\app\build\outputs\bundle\release\app-release.aab`
 
 ---
 
