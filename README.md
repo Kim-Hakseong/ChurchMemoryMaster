@@ -1,194 +1,161 @@
-# 교회학교 암송 수첩 — 출시·운영 가이드
+<p align="center">
+  <img src="client/public/icon-512.png" width="160" alt="교회학교 암송 수첩 로고" />
+</p>
 
-플레이스토어/앱스토어 출시와 이후 업데이트 운영을 위한 핵심 가이드. 코드 변경은 `Log.md`, 디자인 토큰은 `Design2.md` 를 따로 참고.
+<h1 align="center">교회학교 암송 수첩</h1>
+
+<p align="center">
+  <b>유치부·초등부·중고등부 주간 말씀 암송 앱</b><br/>
+  이번 주 암송 말씀을 찾아 헤매지 않도록, 공과 진도에 맞춰 매주 알아서 펼쳐집니다
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Capacitor-7.4-119EFF?logo=capacitor&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/Storage-100%25%20On--device-success" />
+  <img src="https://img.shields.io/badge/Ads-None-lightgrey" />
+</p>
+
+<p align="center">
+  <a href="https://apps.apple.com/kr/app/id6802671002">
+    <img src="https://img.shields.io/badge/App%20Store-1.0%20출시-000000?logo=apple&logoColor=white" />
+  </a>
+  <img src="https://img.shields.io/badge/Google%20Play-출시%20준비%20중-34A853?logo=googleplay&logoColor=white" />
+</p>
 
 ---
 
-## 1. 앱 식별 정보 (고정값 — **절대 변경 금지**)
+## ✨ 무엇이 다른가
 
-| 항목 | 값 |
+- **찾을 필요가 없습니다**: 홈페이지를 뒤적이거나 단톡방을 거슬러 올라가지 않아도, 앱을 열면 부서별 이번 주 말씀이 바로 펼쳐집니다. 공과 진도에 맞춰 `지난주 → 이번 주 → 다음 주` 가 매주 자동으로 넘어갑니다.
+- **세 부서를 한 앱에서**: 유치부·초등부·중고등부를 각각 관리합니다. 다크 모드와 글자 크기까지 부서별로 따로 설정됩니다.
+- **음성으로 암송합니다**: `쉬움 → 보통 → 완전 암송` 3단계 중 완전 암송에서는 마이크로 말해서 확인합니다. 원문과 **80% 이상 일치**하면 통과라, 조사나 띄어쓰기가 조금 달라도 됩니다.
+- **서버가 없습니다**: 회원가입도 로그인도 없습니다. 암송 기록·북마크·설정 전부 기기 안에만 저장되고, 광고·분석 SDK를 **하나도** 쓰지 않습니다.
+
+---
+
+## 📱 스크린샷
+
+| 부서별 이번 주 말씀 | 세 부서 한 앱에서 | 주차 자동 정렬 |
+|:---:|:---:|:---:|
+| <img src="docs/store/screenshot-1.png" width="240" /> | <img src="docs/store/screenshot-2.png" width="240" /> | <img src="docs/store/screenshot-3.png" width="240" /> |
+
+| 3단계 암송 연습 | 포인트·뱃지 | 교회 일정 캘린더 |
+|:---:|:---:|:---:|
+| <img src="docs/store/screenshot-4.png" width="240" /> | <img src="docs/store/screenshot-5.png" width="240" /> | <img src="docs/store/screenshot-6.png" width="240" /> |
+
+---
+
+## 🎯 주요 기능
+
+### 암송
+
+- **3단계 연습** — 쉬움(빈칸 3~5개 선택) · 보통(빈칸 7~10개 선택) · 완전 암송(직접 입력 또는 음성)
+- **월암송** — 이 달의 암송 구절 따로 보기
+- **플래시카드** — 카드를 넘기며 빠르게 반복
+- **전체 목록 검색** — 공과명, 구절 내용, 장절로 찾기
+
+### 꾸준함
+
+- **포인트 · 연속 일수** — 암송을 마칠 때마다 쌓입니다
+- **뱃지 24종** — '첫 걸음', '3일 연속', '일주일 전사', '한 달 챔피언' 등
+- **주간·월간 달성률** — 진도 추적
+- **암송 알림** — 원하는 요일과 시간에
+
+### 곁에 두기
+
+- **홈 화면 위젯** — 중간 크기(이번 주 한 구절) · 큰 크기(3주치). 위젯 설정에서 표시할 부서 변경
+- **교회 일정 캘린더** — 수련회·성경학교·부서 행사. 엑셀·CSV 로 한 번에 가져오기
+- **북마크** — 마음에 남는 구절 저장
+- **암송 카드 공유** — 구절을 이미지로 저장·공유
+
+---
+
+## 🛠 기술 스택
+
+| 영역 | 사용 기술 |
 |---|---|
-| Android `applicationId` / `namespace` | `com.church.memory.app` |
-| iOS Bundle ID (Capacitor `appId`) | `com.church.memory.app` |
-| 앱 이름 (`appName`) | `교회학교 암송 수첩` |
-| 초기 버전 | `versionCode 1`, `versionName "1.0"` |
+| 앱 셸 | Capacitor 7.4 (Android · iOS 공용) |
+| UI | React 18.3 · TypeScript 5.6 · Tailwind CSS 3.4 · shadcn/ui |
+| 라우팅 / 상태 | wouter · TanStack Query |
+| 빌드 | Vite 5.4 |
+| 네이티브 위젯 | Android `AppWidgetProvider` (Kotlin) · iOS WidgetKit (Swift) |
+| 데이터 | 엑셀(xlsx) → 빌드 시 파싱, LocalStorage · IndexedDB 에만 저장 |
 
-> 패키지명(applicationId / Bundle ID)을 한 번이라도 바꾸면 스토어는 **완전히 다른 앱**으로 인식한다. 기존 사용자에겐 업데이트가 안 보이고, 새로 받으면 데이터가 처음부터 시작된다. 1.0 출시 이후로는 이 값을 절대 건드리지 말 것.
+**Capacitor 플러그인**: `speech-recognition` · `local-notifications` · `preferences` · `filesystem` · `share` · `media` · `app`
 
----
-
-## 2. 버전 올리는 규칙
-
-| 변수 | 의미 | 다음 출시 예시 (1.1) |
-|---|---|---|
-| `versionCode` (정수) | 스토어 내부 비교용. **무조건 단조 증가**. 1 → 2 → 3 … | `2` |
-| `versionName` (문자열) | 사용자에게 보이는 버전. 자유롭게 표기. | `"1.1"` |
-
-수정 위치:
-- `android/app/build.gradle` — `defaultConfig { versionCode N; versionName "X.Y" }`
-- `capacitor.config.ts` — `appendUserAgent: 'ChurchMemoryApp/X.Y'`
-- `android/app/src/main/assets/capacitor.config.json` 및 `ios/App/App/capacitor.config.json` 의 `appendUserAgent` 도 동일 값으로 (다음 `npx cap sync` 시 자동 동기화되긴 하나 명시적으로 맞춰주는 게 안전)
-- iOS 출시 시 Xcode 의 `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` 도 같은 값으로 맞춰서 빌드 → 업로드
-
-⚠️ `versionCode` 를 한 번이라도 줄이거나 같은 값으로 다시 올리면 스토어가 업로드를 거절. 실수로 5 까지 올렸다가 4 로 되돌리는 건 불가능. 무조건 앞으로만.
+> `client/` 의 웹 소스 하나가 Android·iOS 양쪽의 알맹이입니다. `android/` 와 `ios/` 는 그것을 감싸는 껍데기이므로, **기능 수정은 대부분 `client/` 에서 이루어집니다.**
 
 ---
 
-## 3. 서명키 관리 (Android, 가장 중요)
+## 🚀 빌드
 
-업데이트가 같은 앱으로 인식되려면 **APK/AAB 서명에 사용한 키스토어가 항상 동일**해야 한다. 키를 잃어버리면 같은 패키지로 업데이트하는 길이 영구적으로 막힌다.
-
-### 권장 절차
-1. 출시용 keystore (`.jks` / `.keystore`) 한 번 생성하고 **여러 위치에 백업** (로컬 + 클라우드 + 외장 디스크 등 최소 3곳).
-2. keystore 비밀번호 + 키 alias + 키 비밀번호도 같은 수준으로 안전하게 보관 (1Password / Bitwarden 등).
-3. **Play App Signing 활성화 권장** — Play Console 에서 활성화하면 Google 이 최종 서명키를 보관해주고, 업로드 키만 분실해도 새 업로드 키로 교체할 수 있다 (분실 리스크 1차 안전장치).
-4. `.keystore` 파일은 절대 깃에 커밋하지 말 것. `.gitignore` 에 `*.jks`, `*.keystore` 추가.
-
-### 키 분실 시 결과
-- Play App Signing 활성화 X: 같은 패키지로 업데이트 영구 불가. 새 패키지명으로 신규 등록 → 모든 사용자 데이터 손실.
-- Play App Signing 활성화 O: Google 에 키 교체 요청 가능. 데이터·평점 유지하며 복구 가능.
-
----
-
-## 4. 사용자 데이터 보존 메커니즘
-
-플레이스토어 자동 업데이트 시 사용자가 쌓은 데이터는 **그대로 유지된다.** 단 §1, §3 조건이 충족될 때.
-
-| 데이터 | 저장 방식 | 위치 |
-|---|---|---|
-| 북마크 | `@capacitor/preferences` | Android SharedPreferences |
-| 포인트·뱃지·스트릭 | WebView `localStorage` | 앱 데이터 디렉터리 (WebView 내부) |
-| 암송 구절 시드 | `localStorage` | 동일 |
-| 캘린더 이벤트 | `localStorage` + `Filesystem(Documents)` | 동일 + 앱 전용 Documents/ |
-
-데이터가 초기화되는 경우 (피해야 함):
-1. `applicationId` 변경 → 새 앱으로 인식
-2. 서명키 변경 → 설치 자체 거부 (재설치 필요)
-3. 사용자가 직접 "앱 데이터 지우기" 수행
-4. 사용자가 앱 삭제 후 재설치
-5. 자동 백업 비활성화 + 데이터 손상
-
-데이터 구조 변경 (예: `localStorage` 키 이름 변경) 이 필요한 업데이트에서는 **마이그레이션 코드** (옛 키 읽어서 새 키로 옮기기) 를 반드시 한 번 넣고 다음 버전에서 제거할 것.
-
----
-
-## 5. 빌드 / 동기화 절차
-
-### 기본 빌드 (코드 변경 후 매번)
-```powershell
-npm run build
-npx cap sync android        # ← 빠뜨리면 옛 자산이 APK 에 들어감
-# 또는: npx cap sync ios
+```bash
+npm install
+npm run build            # 웹 에셋 → dist/public
+npx cap sync android     # 또는 ios
 ```
 
-### Android Studio 에서 APK 빌드
-1. Android Studio 로 `android/` 프로젝트 열기
-2. `Build → Generate Signed Bundle / APK` → AAB (Play Store 권장)
-3. keystore 선택 → release 빌드
-4. 결과물: `android/app/release/app-release.aab`
+**Android AAB** (윈도우에서만 — 키스토어가 윈도우에 있습니다)
 
-### iOS 빌드 (Xcode)
-- iOS 네이티브 프로젝트는 `npx cap sync ios` 시 생성. `ios/App/App.xcworkspace` 를 Xcode 로 열어 Archive → App Store Connect 업로드.
-- Bundle ID 가 `com.church.memory.app` 와 일치하는 App Store Connect 앱과 프로비저닝 프로파일 미리 준비.
-
-### Clean 빌드가 필요할 때
-패키지명 변경 같은 큰 구조 변경 후엔 캐시 잔재 제거:
-```powershell
-# Android
+```bat
+set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
 cd android
-./gradlew clean
-# 또는 Android Studio → Build → Clean Project
+gradlew.bat bundleRelease
+```
 
-# Capacitor
-rm -rf node_modules/.cache
-rm -rf dist
-npm run build && npx cap sync
+**iOS** — 맥에서 `ios/App/App.xcworkspace` 열어 아카이브
+
+> ⚠️ `npx cap sync` 를 빠뜨리면 `android/app/src/main/assets/public/` 이 갱신되지 않아,
+> 웹에서 고친 내용이 **하나도 반영되지 않은** 빌드가 나갑니다.
+
+> ⚠️ WSL 에서는 `npm run build` 가 `sharp` 때문에 죽는데 **셸이 exit 0 을 반환합니다.**
+> 산출물 타임스탬프를 반드시 직접 확인하세요.
+
+---
+
+## 📂 프로젝트 구조
+
+```
+client/                  웹 소스 — Android·iOS 공통 알맹이
+  src/pages/             화면 (home, age-group, calendar, badges …)
+  src/components/        VerseCard, FlashcardModal, ExcelUploader …
+  public/                아이콘·seed.json·엑셀 원본
+android/                 Capacitor Android 셸
+  app/src/main/java/…/widget/    홈 화면 위젯 (Kotlin)
+ios/                     Capacitor iOS 셸
+  App/ChurchMemoryWidget/        홈 화면 위젯 (WidgetKit)
+attached_assets/         암송 목록·교회 일정 엑셀 원본
+docs/                    개인정보처리방침(GitHub Pages) · 스토어 애셋 · 출시 가이드
+scripts/                 아이콘 생성, 엑셀 복사, seed 빌드
 ```
 
 ---
 
-## 6. 디바이스 디버깅 (Android)
+## 📄 문서
 
-```powershell
-cd "C:\Users\user\AppData\Local\Android\Sdk\platform-tools"
-.\adb logcat *:E AndroidRuntime:V chromium:V Capacitor:V > crash.log
-```
-
-자가서명 APK 설치 시 "Play Protect 무한 검사" 가 걸리면: Play 스토어 → 프로필 → Play Protect → 검사 일시 OFF.
-
----
-
-## 7. 자주 만난 함정 (체크리스트)
-
-- [ ] `npm run build` 후 `npx cap sync` 안 함 → 옛 자산 그대로
-- [ ] Capacitor 설정 변경 시 `android/app/src/main/assets/capacitor.config.json` 이 sync 로 덮어쓰기됨 (정본은 루트 `capacitor.config.ts`)
-- [ ] SW 캐시로 옛 페이지 뜸 → `client/public/sw.js` 의 킬 스위치 동작 확인
-- [ ] `backdrop-filter` 중첩 → Android WebView GPU 크래시. 1중첩만 사용
-- [ ] 위젯 동작 안 함 → Manifest 의 `<action>` 명과 Kotlin `ACTION_REFRESH` 상수, 그리고 위젯 XML 의 `android:configure` FQN 셋이 모두 일치하는지 확인
-- [ ] `versionCode` 를 같은 값으로 두 번 올림 → 스토어 업로드 거부
-- [ ] 키스토어 분실 → Play App Signing 활성화 안 되어 있었다면 복구 불가
+| 문서 | 내용 |
+|---|---|
+| [docs/RELEASE-GUIDE.md](docs/RELEASE-GUIDE.md) | 출시·운영 가이드 (버전 규칙, 서명키, 최종 체크리스트) |
+| [HANDOFF-WINDOWS.md](HANDOFF-WINDOWS.md) | 윈도우에서 Play Store 빌드하기 |
+| [PlayStore.md](PlayStore.md) · [AppStore.md](AppStore.md) | 스토어 등록정보 최종 문구 |
+| [Log.md](Log.md) | 개발 이력 전체 (23장) |
+| [Design2.md](Design2.md) | 디자인 토큰 |
 
 ---
 
-## 8. 데이터 사이클 (참고)
+## 🔒 개인정보
 
-| 부서 | 데이터 범위 | 사이클 | wrap 동작 |
-|---|---|---|---|
-| 유치부 | 2024-01-07 ~ 2033-12-17 (520주) | 52주 | 2034부터 1~52주차 반복 |
-| 초등부 | 2024-01-07 ~ 2033-12-17 (520주) | 104주 | 2034부터 1~104주차 반복 |
-| 중고등부 | 2024-01-07 ~ 2034-01-07 (523주) | 156주 | 2034.1부터 1~156주차 반복 |
-| 초등월암송 | 2024.1 ~ 2033.12 (120개월) | 12개월 | 같은 월의 가장 최근 연도 데이터 적용 |
+수집하지 않습니다. 서버가 없습니다.
 
-원본 엑셀(`client/public/seed.json` 으로 변환된 시드) 은 무수정. 룩업 로직만 wrap.
+모든 데이터는 기기 안에만 저장되며, 앱을 삭제하면 함께 사라집니다.
+음성 인식은 운영체제 기능을 호출할 뿐 녹음을 저장하거나 전송하지 않습니다.
+
+[개인정보처리방침 전문](https://kim-hakseong.github.io/ChurchMemoryMaster/privacy-policy.html)
 
 ---
 
-## 9. 출시 직전 최종 체크리스트
-
-### 코드
-- [ ] `npm run lint` 또는 `npx tsc --noEmit` 통과
-- [ ] `console.log` / 디버그 코드 제거
-- [ ] 하드코딩된 비밀값 (`.env` 의 API 키 등) 없는지 확인
-- [ ] `versionCode` / `versionName` / `appendUserAgent` 세 곳 모두 같은 버전인지 확인
-
-### Android
-- [ ] keystore 백업 완료 (3곳 이상)
-- [ ] Play App Signing 활성화
-- [ ] 앱 아이콘 모든 해상도(mipmap-mdpi~xxxhdpi) 정상
-- [ ] 권한 (`AndroidManifest.xml`) 실제 사용하는 것만 남았는지 확인 (INTERNET, RECORD_AUDIO, MODIFY_AUDIO_SETTINGS)
-- [ ] Release AAB 빌드 후 내부 테스트 트랙으로 한 번 올려서 실 디바이스 설치/실행 검증
-- [ ] 데이터 보존 검증: 1.0 설치 → 데이터 쌓기 → 1.1 더미 빌드(versionCode 2) 로 업데이트 → 데이터 살아있는지 확인
-
-### iOS (다음 단계)
-- [ ] Apple Developer Program 가입
-- [ ] App Store Connect 앱 등록 (Bundle ID: `com.church.memory.app`)
-- [ ] 스크린샷·앱 설명 준비
-- [ ] iOS 자동 백업 (iCloud) 동작 확인
-
-### 스토어 등록 정보
-- [ ] 앱 이름·짧은 설명·자세한 설명
-- [ ] 스크린샷 (Phone 최소 2장, 권장 5장)
-- [ ] 그래픽 이미지 (Play: 1024×500 피처 그래픽)
-- [ ] 카테고리 (교육)
-- [ ] 콘텐츠 등급 (Play 콘텐츠 등급 설문)
-- [ ] 개인정보처리방침 URL (필수 — 데이터 수집·외부 전송 없음을 명시)
-- [ ] 개발자 연락처
-
----
-
-## 10. 1.0 이후 업데이트 권장 흐름
-
-1. `feature/X` 브랜치에서 작업 → `main` 머지
-2. `Log.md` 에 변경 내역 추가
-3. 버전 번호 올림:
-   - `android/app/build.gradle` 의 `versionCode` +1, `versionName` 갱신
-   - `capacitor.config.ts` 와 두 capacitor.config.json 의 `appendUserAgent` 동일 값으로
-4. `npm run build && npx cap sync android`
-5. Android Studio 에서 release AAB 빌드 → Play Console "내부 테스트" 트랙 업로드
-6. 실 디바이스 1~2대에서 OTA 자동 업데이트로 받아 데이터 살아있는지 검증
-7. 문제없으면 프로덕션 트랙으로 승격
-
----
-
-**문서 작성**: 2026-05-23
-**대상 버전**: 1.0 (versionCode 1) 첫 출시 준비 시점
+<p align="center">
+  <sub>테크센세 (TECHSENSE) · <a href="mailto:contact@testbench.tools">contact@testbench.tools</a></sub>
+</p>
